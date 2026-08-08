@@ -24,10 +24,26 @@ kb_path = os.path.join(os.path.dirname(__file__), 'knowledge_zs.js')
 with open(kb_path, 'r', encoding='utf-8') as f:
     kb = f.read()
 
+# 加载纠错
+corrections = {}
+corr_path = os.path.join(os.path.dirname(__file__), 'corrections.json')
+if os.path.exists(corr_path):
+    with open(corr_path, 'r', encoding='utf-8') as f:
+        corrections = json.load(f)
+
 # 提取 chunks
 match = re.search(r'const ZS_CHUNKS\s*=\s*(\[.*?\]);', kb, re.DOTALL)
 pattern = r"x:'((?:[^'\\]|\\.)*)'"
 texts = [m.replace("\\'", "'") for m in re.findall(pattern, match.group(1))]
+
+# 应用纠错
+zs_corr = corrections.get('knowledge_zs_v3', {})
+for k, v in zs_corr.items():
+    idx = int(k)
+    if 0 <= idx < len(texts):
+        texts[idx] = v
+if zs_corr:
+    print(f"已应用 {len(zs_corr)} 条纠错")
 
 # 提取 TOC
 toc_match = re.search(r'const ZS_TOC\s*=\s*(\[.*?\]);', kb, re.DOTALL)

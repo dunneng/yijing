@@ -1331,18 +1331,18 @@ function keywordSearch(query) {
     
     // 关键词匹配（IDF加权）
     for (const kw of keywords) {
-      if (chunk.x.includes(kw)) {
+      if (chunkText.includes(kw)) {
         score += kw.length * (kwWeight.get(kw) || 1);
       }
     }
     
     // 完整查询匹配（大幅加分）
-    if (chunk.x.includes(query)) score += 30;
+    if (chunkText.includes(query)) score += 30;
     
-    // 卦名匹配：chunk内容包含目标卦名，大幅加权（解决问坤卦却返回革卦的问题）
-    if (hexName && chunk.x.includes(hexName + '卦')) score += 80;
+    // 卦名匹配：chunk内容包含目标卦名，大幅加权
+    if (hexName && chunkText.includes(hexName + '卦')) score += 80;
     // 卦名出现在内容中也加分
-    if (hexName && chunk.x.includes(hexName) && !chunk.x.includes(hexName + '卦')) score += 20;
+    if (hexName && chunkText.includes(hexName) && !chunkText.includes(hexName + '卦')) score += 20;
     // 章节级加权：chunk所属章节是讲该卦的，整个章节的chunk都加分
     if (hexNum > 0 && HEX_CHAPTERS[hexNum]) {
       const tocEntry = ZS_TOC.find(t => t.v === chunk.v && t.c === chunk.c);
@@ -1747,7 +1747,12 @@ const App = {
         groups[key] = { v: v, c: c, chunks: [], score: 0, title: '' };
         order.push(key);
       }
-      groups[key].chunks.push({ p: p, text: r.text || (chunk ? chunk.x : ''), score: r.score || 0 });
+      var correctedText = r.text || '';
+      if (!correctedText && chunk) {
+        var ci = (r.idx !== undefined) ? r.idx : ZS_CHUNKS.indexOf(chunk);
+        correctedText = getCorrectedZSChunk(ci);
+      }
+      groups[key].chunks.push({ p: p, text: correctedText, score: r.score || 0 });
       groups[key].score += (r.score || 0);
       
       // 获取章节标题
