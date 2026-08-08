@@ -177,7 +177,7 @@ const EDITOR = {
 
     try {
       const jsonStr = JSON.stringify(this._corrections, null, 2);
-      // base64 编码（UTF-8 安全，不用废弃的 unescape）
+      // base64 编码（UTF-8 安全，TextEncoder）
       const encoder = new TextEncoder();
       const bytes = encoder.encode(jsonStr);
       let binary = '';
