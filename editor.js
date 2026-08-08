@@ -177,8 +177,12 @@ const EDITOR = {
 
     try {
       const jsonStr = JSON.stringify(this._corrections, null, 2);
-      // base64 编码（支持中文）
-      const content = btoa(unescape(encodeURIComponent(jsonStr)));
+      // base64 编码（UTF-8 安全，不用废弃的 unescape）
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(jsonStr);
+      let binary = '';
+      bytes.forEach(function(b) { binary += String.fromCharCode(b); });
+      const content = btoa(binary);
 
       const body = {
         message: `fix: 纠错 ${source}/${key}`,
@@ -186,6 +190,9 @@ const EDITOR = {
         branch: this._branch
       };
       if (this._sha) body.sha = this._sha;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(function() { controller.abort(); }, 15000);
 
       const resp = await fetch(
         `https://api.github.com/repos/${this._repo}/contents/${this._path}`,
@@ -196,9 +203,11 @@ const EDITOR = {
             Accept: 'application/vnd.github+json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify(body),
+          signal: controller.signal
         }
       );
+      clearTimeout(timeout);
 
       if (resp.ok) {
         const data = await resp.json();
@@ -232,7 +241,11 @@ const EDITOR = {
         console.warn('Submit error:', resp.status, errBody);
       }
     } catch (e) {
-      statusEl.textContent = '网络错误: ' + e.message;
+      if (e.name === 'AbortError') {
+        statusEl.textContent = '提交超时，请检查网络';
+      } else {
+        statusEl.textContent = '网络错误: ' + e.message;
+      }
       statusEl.style.color = 'var(--red,#B8392B)';
     }
   },
