@@ -50,7 +50,7 @@ const GH_AUTH = {
         },
         body: JSON.stringify({
           client_id: GITHUB_CLIENT_ID,
-          scope: 'gist'
+          scope: 'gist public_repo'
         })
       });
 

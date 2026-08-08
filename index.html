@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=2,user-scalable=yes,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#3A3228">
@@ -41,9 +41,13 @@ body{
 .app{
   width:100%;max-width:430px;height:100%;
   background:var(--bg);
-  display:flex;flex-direction:column;
+  display:flex;flex-direction:row;
   overflow:hidden;
   position:relative;
+}
+.app-body{
+  flex:1;display:flex;flex-direction:column;
+  min-width:0;overflow:hidden;
 }
 
 /* 顶部 */
@@ -61,18 +65,20 @@ body{
 /* 主内容区 */
 .main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
-/* 底部导航 */
-.bottom-nav{
-  display:flex;background:var(--nav);flex-shrink:0;
-  padding-bottom:var(--safe-bottom);
+/* 左侧导航 */
+.side-nav{
+  width:56px;display:flex;flex-direction:column;
+  background:var(--nav);flex-shrink:0;
+  padding-top:6px;padding-bottom:var(--safe-bottom);
+  align-items:center;gap:2px;
 }
 .nav-item{
-  flex:1;display:flex;flex-direction:column;align-items:center;
-  padding:8px 4px;color:#998877;font-size:10px;cursor:pointer;
-  transition:color .2s;gap:3px;
+  width:46px;height:50px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:#998877;font-size:9px;cursor:pointer;
+  transition:color .2s;gap:2px;border-radius:10px;
 }
 .nav-item.active{color:var(--gold)}
-.nav-icon{font-size:18px}
+.nav-icon{font-size:20px}
 
 /* ── 对话页 ── */
 .chat-area{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
@@ -724,7 +730,7 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 /* 视频全屏：隐藏导航、撑满屏幕 */
 .app.fullscreen-video{max-width:none;width:100vw;height:100vh;background:#000}
 .app.fullscreen-video .header{display:none}
-.app.fullscreen-video .bottom-nav{display:none}
+.app.fullscreen-video .side-nav{display:none}
 .app.fullscreen-video .page{display:none}
 .app.fullscreen-video #page-video{display:flex;flex:1}
 .app.fullscreen-video .video-player-wrapper{flex:1;display:flex;align-items:center;justify-content:center}
@@ -737,7 +743,7 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 /* 全书全屏：竖屏阅读 */
 .app.fullscreen-book{max-width:none;width:100vw;height:100vh;background:var(--bg)}
 .app.fullscreen-book .header{display:none}
-.app.fullscreen-book .bottom-nav{display:none}
+.app.fullscreen-book .side-nav{display:none}
 .app.fullscreen-book .page{display:none}
 .app.fullscreen-book #page-video{display:flex;flex:1}
 .app.fullscreen-book .video-player-wrapper{display:none}
@@ -763,6 +769,23 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 /* ── 登录弹窗 ── */
 .login-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;
   background:rgba(0,0,0,.7);z-index:9999;justify-content:center;align-items:center}
+
+/* ── 横屏适配 ── */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app{max-width:none}
+  .header{padding:6px 12px;padding-top:max(6px,env(safe-area-inset-top))}
+  .header-title{font-size:13px}
+  .side-nav{width:44px}
+  .nav-item{width:36px;height:40px;font-size:8px}
+  .nav-icon{font-size:16px}
+  .video-player-wrapper video{max-height:60vh}
+}
+
+@media (max-width: 400px) {
+  .side-nav{width:48px}
+  .nav-item{width:40px;height:44px;font-size:8px}
+  .nav-icon{font-size:18px}
+}
 .login-overlay.show{display:flex}
 .login-dialog{background:var(--card);border-radius:16px;padding:24px 20px;
   max-width:360px;width:90%;text-align:center;
@@ -786,6 +809,11 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 .header-user.show{display:flex}
 .header-avatar{width:28px;height:28px;border-radius:50%;border:2px solid var(--gold)}
 .header-username{font-size:12px;color:var(--gold)}
+/* 纠错标记 */
+.reader-p.corrected{border-left:2px solid var(--green,#2E5C4E);padding-left:10px}
+.reader-p.corrected::after{content:' ✓已纠错';font-size:9px;color:var(--green,#2E5C4E);vertical-align:super}
+.edit-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;z-index:9998;pointer-events:none;transition:opacity .3s;display:none}
+.edit-hint.show{display:block}
 
 </style>
 </head>
@@ -795,6 +823,24 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 
 <!-- 全屏退出按钮 -->
 <button class="fullscreen-exit-btn" id="fullscreenExitBtn" onclick="App.exitFullscreen()">✕ 退出全屏</button>
+
+<!-- 左侧导航 -->
+<div class="side-nav">
+  <div class="nav-item" data-page="intro" onclick="App.switchPage('intro')">
+    <span class="nav-icon">🚪</span>入门
+  </div>
+  <div class="nav-item active" data-page="chat" onclick="App.switchPage('chat')">
+    <span class="nav-icon">💬</span>对话
+  </div>
+  <div class="nav-item" data-page="video" onclick="App.switchPage('video')">
+    <span class="nav-icon">🎬</span>视频
+  </div>
+  <div class="nav-item" data-page="hexagram" onclick="App.switchPage('hexagram')">
+    <span class="nav-icon">☯</span>64卦
+  </div>
+</div>
+
+<div class="app-body">
 
 <!-- 顶部栏 -->
 <div class="header">
@@ -863,8 +909,11 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
       <button id="videoModeBtn" class="video-nav-btn" onclick="App.toggleVideoMode()" style="font-size:11px">
         💻 在线
       </button>
-      <button id="videoFullscreenBtn" class="video-nav-btn" onclick="App.toggleFullscreen('video')" style="font-size:11px">
+      <button id="videoFullscreenBtn" class="video-nav-btn" onclick="App.smartFullscreen()" style="font-size:11px">
         ⛶ 全屏
+      </button>
+      <button id="videoPipBtn" class="video-nav-btn" onclick="App.togglePip()" style="font-size:11px;display:none">
+        📺 画中画
       </button>
     </div>
     <div class="video-ep-nav">
@@ -978,21 +1027,7 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 </div>
 
 
-<!-- 底部导航 -->
-<div class="bottom-nav">
-    <div class="nav-item" data-page="intro" onclick="App.switchPage('intro')">
-    <span class="nav-icon">🚪</span>入门
-  </div>
-  <div class="nav-item active" data-page="chat" onclick="App.switchPage('chat')">
-    <span class="nav-icon">💬</span>对话
-  </div>
-  <div class="nav-item" data-page="video" onclick="App.switchPage('video')">
-    <span class="nav-icon">🎬</span>视频
-  </div>
-  <div class="nav-item" data-page="hexagram" onclick="App.switchPage('hexagram')">
-    <span class="nav-icon">☯</span>64卦
-  </div>
-</div>
+</div><!-- /app-body -->
 
 </div><!-- /app -->
 
@@ -1002,6 +1037,7 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 <script src="video_urls.js"></script>
 <script src="auth.js?v=2"></script>
 <script src="sync.js?v=2"></script>
+<script src="editor.js"></script>
 <script>
 // ── 自动刷新 AcFun 地址（从 GitHub Pages 拉最新）──
 (function() {
@@ -1379,6 +1415,12 @@ const App = {
     this.loadVectors();
     // 自检依赖
     this._selfCheck();
+    // 初始化纠错编辑器（异步，不阻塞页面）
+    EDITOR.init().then(ok => {
+      if (ok) console.log('Editor ready');
+    });
+    // 长按纠错 — 阅读页
+    this._initLongPress();
     // 输入框联想
     const inp = document.getElementById('chatInput');
     inp.addEventListener('focus', () => this.showInputSuggestions());
@@ -1412,6 +1454,13 @@ const App = {
     if (document.fullscreenElement || this._fullscreenContext) {
       this.exitFullscreen();
     }
+    // Save video position before leaving video page
+    if (this.currentPage === 'video' && page !== 'video') {
+      var player = document.getElementById('videoPlayer');
+      if (player && !player.paused) {
+        this._videoCurrentTime = player.currentTime;
+      }
+    }
     this.currentPage = page;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     
@@ -1443,9 +1492,25 @@ const App = {
       this.renderVideoList();
       this.renderBookCatalog();
       this.refreshBookProgress();
-      if (this._videoChapterId) {
+      // Resume video if we have a chapter, without restarting
+      if (this._videoChapterId && this._videoCurrentTime != null) {
+        var player = document.getElementById('videoPlayer');
+        if (player && player.src) {
+          player.currentTime = this._videoCurrentTime;
+          player.play().catch(function(){});
+        }
+        // Update header info without reloading
+        var tocEntry = ZS_TOC.find(function(t) { return t.c === App._videoChapterId; });
+        document.getElementById('headerTitle').textContent = '第' + this._videoChapterId + '集';
+        document.getElementById('headerSub').textContent = tocEntry ? tocEntry.t : '';
+        document.getElementById('videoEpTitle').textContent = tocEntry ? tocEntry.t : '';
+        document.getElementById('videoEpNum').textContent = '第' + this._videoChapterId + '集 / 共144集';
+      } else if (this._videoChapterId) {
         this.playVideoChapter(this._videoChapterId);
       }
+      // Show PiP button if supported
+      this._updatePipBtn();
+      this._updateFullscreenBtn();
     
     } else if (page === 'hexagram') {
       document.getElementById('headerTitle').textContent = '周易六十四卦';
@@ -1765,15 +1830,98 @@ const App = {
   },
 
   _renderVectorResults(query, results) {
+    var self = this;
     var typing = document.querySelector('.msg.typing');
     if (typing) typing.remove();
-    
+
+    // ── 收集上下文给 DeepSeek ──
+    var contextParts = [];
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      var src = r.source || '';
+      if (!src && r.chunk) {
+        var ct = self.getChapterTitle(r.chunk);
+        src = (r.chunk.v ? '卷' + r.chunk.v + ' · ' : '') + (ct || '');
+      }
+      contextParts.push((src ? '【' + src + '】\n' : '') + r.text);
+    }
+    var contextText = contextParts.join('\n\n---\n\n');
+
+    // ── 调用 DeepSeek 生成回答 ──
+    self._deepSeekChat(query, contextText, results, function(aiReply, sources) {
+      self._renderAIResponse(query, aiReply, sources, results);
+    });
+  },
+
+  // ── DeepSeek AI 对话 ──
+  _deepSeekChat(query, context, results, callback) {
+    var self = this;
+    var systemPrompt = '你是曾仕强教授《易经的智慧》的专属私教助手。\n' +
+      '请严格根据以下参考资料回答用户问题，用教授的口吻和风格。\n' +
+      '要求：\n' +
+      '1. 如果参考资料中有直接答案，就引用原文来回答\n' +
+      '2. 如果参考资料没有直接覆盖，请基于教授的思想体系进行合理延伸，并标注"延伸理解"\n' +
+      '3. 回答要简洁、有深度，不要太长（300字以内）\n' +
+      '4. 用通俗的语言解释古奥的概念';
+
+    var messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: '参考资料：\n\n' + context + '\n\n用户提问：' + query }
+    ];
+
+    // 获取 API 地址
+    var apiKey = localStorage.getItem('yijing_deepseek_key') || '';
+    var apiBase = apiKey
+      ? 'https://api.deepseek.com'
+      : 'http://localhost:8766';
+
+    var headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+    var body = JSON.stringify({
+      model: 'deepseek-chat',
+      messages: messages,
+      max_tokens: 600,
+      temperature: 0.7
+    });
+
+    fetch(apiBase + '/v1/chat/completions', {
+      method: 'POST',
+      headers: headers,
+      body: body,
+      signal: AbortSignal.timeout(30000)
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('API error ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var reply = data.choices && data.choices[0]
+        ? data.choices[0].message.content
+        : '';
+      if (reply) {
+        callback(reply, results);
+      } else {
+        throw new Error('empty response');
+      }
+    })
+    .catch(function(err) {
+      console.warn('DeepSeek API 不可用，使用原文展示:', err.message);
+      // 回落：直接显示原文
+      callback(null, results);
+    });
+  },
+
+  // ── 渲染 AI 回答 ──
+  _renderAIResponse(query, aiReply, sources, rawResults) {
+    var self = this;
     var area = document.getElementById('chatArea');
     document.getElementById('chatEmpty').classList.add('hidden');
-    
+
+    var html = '';
+
     // 卦象检测
     var hexNum = detectHexagram(query);
-    var hexHtml = '';
     if (hexNum > 0) {
       var hname = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
         '同人','大有','谦','豫','随','蛊','临','观','噬嗑','贲','剥','复',
@@ -1781,47 +1929,54 @@ const App = {
         '家人','睽','蹇','解','损','益','夬','姤','萃','升','困','井',
         '革','鼎','震','艮','渐','归妹','丰','旅','巽','兑','涣','节',
         '中孚','小过','既济','未济'][hexNum];
-      hexHtml = '<b>' + hname + '卦</b>（第' + hexNum + '卦）<br><br>';
-      
-      // 卦文入口（不混入傅佩荣，点按钮自己去看）
+      html += '<b>' + hname + '卦</b>（第' + hexNum + '卦）<br><br>';
       if (hexNum > 0) {
-        var hname2 = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
+        var hn2 = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
           '同人','大有','谦','豫','随','蛊','临','观','噬嗑','贲','剥','复',
           '无妄','大畜','颐','大过','坎','离','咸','恒','遁','大壮','晋','明夷',
           '家人','睽','蹇','解','损','益','夬','姤','萃','升','困','井',
           '革','鼎','震','艮','渐','归妹','丰','旅','巽','兑','涣','节',
           '中孚','小过','既济','未济'][hexNum];
-        hexHtml += '<div style="text-align:center;padding:10px 0">' +
-          '<span style="display:inline-block;padding:8px 20px;border-radius:20px;background:var(--nav);color:var(--gold);font-size:12px;cursor:pointer;letter-spacing:1px" ' +
-          'onclick="App.openHexDetail(' + hexNum + ')">📖 查看' + hname2 + '卦原文与傅佩荣解说 →</span>' +
+        html += '<div style="text-align:center;padding:6px 0">' +
+          '<span style="display:inline-block;padding:6px 16px;border-radius:20px;background:var(--nav);color:var(--gold);font-size:12px;cursor:pointer;letter-spacing:1px" ' +
+          'onclick="App.openHexDetail(' + hexNum + ')">📖 查看' + hn2 + '卦原文与傅佩荣解说 →</span>' +
           '</div>';
       }
     }
-    
-    // 每条结果独立卡片
-    var html = hexHtml;
-    var sources = [];
-    for (var i = 0; i < results.length; i++) {
-      var r = results[i];
-      if (i > 0) html += '<div style="border-top:1px dashed var(--divider);margin:8px 0"></div>';
-      html += '<div style="font-size:13px;line-height:1.85;letter-spacing:.8px">' + r.text + '</div>';
+
+    // AI 回答
+    if (aiReply) {
+      html += '<div style="font-size:13px;line-height:1.85;letter-spacing:.8px">' +
+        aiReply.replace(/\n/g, '<br>') + '</div>';
+    }
+
+    // 原文参考
+    html += '<details style="margin-top:12px"><summary style="font-size:11px;color:var(--sub);cursor:pointer;letter-spacing:1px">📖 原文参考（' + rawResults.length + '条）</summary>';
+    html += '<div style="margin-top:6px;padding:8px;background:var(--bg);border-radius:8px;max-height:300px;overflow-y:auto">';
+    for (var i = 0; i < rawResults.length; i++) {
+      var r = rawResults[i];
       var vsrc = r.source;
-      var vtocId = 0;
       if (!vsrc && r.chunk) {
         var ct = self.getChapterTitle(r.chunk);
         vsrc = (r.chunk.v ? '卷' + r.chunk.v : '') + (ct ? ' · ' + ct : '');
       }
       if (vsrc) {
         var vtocEntry = r.chunk ? ZS_TOC.find(function(t){return t.v===r.chunk.v && t.c===r.chunk.c}) : null;
-        vtocId = vtocEntry ? vtocEntry.id : 0;
-        html += '<div style="font-size:10px;color:var(--red);margin-top:3px;cursor:pointer" onclick="App.openBookChapter(' + vtocId + ')">📖 ' + vsrc + '</div>';
-        if (sources.indexOf(vsrc) < 0) sources.push(vsrc);
+        var vtocId = vtocEntry ? vtocEntry.id : 0;
+        html += '<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--divider)">' +
+          '<div style="font-size:10px;color:var(--red);cursor:pointer;margin-bottom:2px" onclick="App.openBookChapter(' + vtocId + ')">📖 ' + vsrc + '</div>' +
+          '<div style="font-size:12px;line-height:1.7;color:var(--sub)">' + r.text + '</div>' +
+          '</div>';
+      } else {
+        html += '<div style="font-size:12px;line-height:1.7;color:var(--sub);margin-bottom:4px">' + r.text + '</div>';
       }
     }
-    
+    html += '</div></details>';
+
     this.addMessage('bot', html, '');
 
-    self.addSuggestions(query, results);
+    // 追问建议
+    self.addSuggestions(query, rawResults);
   },
   
   _fallbackKeyword(query, msg) {
@@ -2202,6 +2357,113 @@ const App = {
     return { readCount, total, pct };
   },
 
+  // ── 长按纠错 ──
+  _initLongPress() {
+    let timer = null;
+    let target = null;
+    const LONG_PRESS_MS = 600;
+
+    const start = (e) => {
+      // 只处理内容文本（reader-p 或 fp-text 内）
+      target = e.target.closest('.reader-p, .fp-text, .fp-original');
+      if (!target) return;
+      timer = setTimeout(() => {
+        this._handleLongPress(target);
+        timer = null;
+      }, LONG_PRESS_MS);
+    };
+
+    const cancel = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+    };
+
+    // 阅读器内容区域
+    const reader = document.getElementById('bookReaderContent');
+    if (reader) {
+      reader.addEventListener('touchstart', start, { passive: true });
+      reader.addEventListener('touchend', cancel);
+      reader.addEventListener('touchmove', cancel);
+    }
+
+    // FP 详情内容区域（用事件委托）
+    document.addEventListener('touchstart', (e) => {
+      const fp = e.target.closest('#tab-fp-');
+      if (!fp && !e.target.closest('.fp-text, .fp-original')) return;
+      start(e);
+    }, { passive: true });
+    document.addEventListener('touchend', cancel);
+    document.addEventListener('touchmove', cancel);
+
+    // 桌面端鼠标支持
+    if (reader) {
+      reader.addEventListener('mousedown', start);
+      reader.addEventListener('mouseup', cancel);
+      reader.addEventListener('mousemove', cancel);
+    }
+  },
+
+  _handleLongPress(el) {
+    // 显示一个小提示
+    this._showEditHint();
+
+    // reader-p: 从 data-chunk-idx 获取 chunk 索引
+    if (el.classList.contains('reader-p') && el.dataset.chunkIdx !== undefined) {
+      const idx = parseInt(el.dataset.chunkIdx);
+      const chunk = ZS_CHUNKS[idx];
+      if (!chunk) return;
+      const label = '第' + chunk.c + '集 · 曾仕强 p' + chunk.p;
+      EDITOR.show('knowledge_zs_v3', String(idx), chunk.x, label);
+      return;
+    }
+
+    // fp-text / fp-original: 从父元素的 data-hex-id 获取卦ID
+    const fpContainer = el.closest('[data-hex-id]');
+    if (fpContainer) {
+      const hexId = fpContainer.dataset.hexId;
+      const oldText = FP_DATA[hexId] || '';
+      if (!oldText) return;
+      const hexNames = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
+        '同人','大有','谦','豫','随','蛊','临','观','噬嗑','贲','剥','复',
+        '无妄','大畜','颐','大过','坎','离','咸','恒','遁','大壮','晋','明夷',
+        '家人','睽','蹇','解','损','益','夬','姤','萃','升','困','井',
+        '革','鼎','震','艮','渐','归妹','丰','旅','巽','兑','涣','节',
+        '中孚','小过','既济','未济'];
+      const name = hexNames[parseInt(hexId)] || '';
+      EDITOR.show('fupeirong_data', hexId, oldText, '第' + hexId + '卦 ' + name + ' · 傅佩荣');
+      return;
+    }
+  },
+
+  _showEditHint() {
+    const old = document.getElementById('editHint');
+    if (old) old.remove();
+    const hint = document.createElement('div');
+    hint.id = 'editHint';
+    hint.className = 'edit-hint show';
+    hint.textContent = '✎ 长按文本可纠错编辑';
+    document.body.appendChild(hint);
+    setTimeout(() => hint.remove(), 2000);
+  },
+
+  // 重新渲染当前书籍阅读页（应用纠错后）
+  refreshBookView() {
+    if (!this._bookReading || this._currentTocId === undefined) return;
+    this.openBookChapter(this._currentTocId);
+  },
+
+  // 重新渲染当前 FP 详情（应用纠错后）
+  refreshFPView() {
+    if (this.currentPage !== 'hexDetail') return;
+    const container = document.getElementById('hexDetailContent');
+    if (!container) return;
+    const fpEl = container.querySelector('.fp-text.active, #tab-fp- .fp-text');
+    if (!fpEl) return;
+    const hexId = container.dataset.hexId || fpEl.closest('[data-hex-id]')?.dataset?.hexId;
+    if (!hexId) return;
+    const content = FP_DATA[String(hexId)] || '暂无解说数据';
+    fpEl.innerHTML = formatFP(content, hexId);
+  },
+
   renderBookCatalog(filter) {
     const list = document.getElementById('bookCatalogList');
     const progress = this.getProgress();
@@ -2255,6 +2517,7 @@ const App = {
     const tocIdx = ZS_TOC.findIndex(t => t.id === tocId);
     if (tocIdx < 0) return;
     const toc = ZS_TOC[tocIdx];
+    this._currentTocId = tocId;  // 记录当前章节（用于刷新）
     
     const nextToc = tocIdx < ZS_TOC.length - 1 ? ZS_TOC[tocIdx + 1] : null;
     const chunks = ZS_CHUNKS.filter(c => {
@@ -2299,7 +2562,15 @@ const App = {
       let text = formatYinYang(c.x);
       // 清理可能嵌入的任何"第X集+标题+OCR乱码"前缀
       text = text.replace(titlePattern, '');
-      html += '<p class="reader-p">' + text + '</p>';
+      // 应用纠错（如有）
+      const origIdx = ZS_CHUNKS.indexOf(c);
+      const correction = EDITOR.getChunkCorrection(origIdx);
+      if (correction) {
+        text = formatYinYang(correction).replace(titlePattern, '');
+        html += '<p class="reader-p corrected" data-chunk-idx="' + origIdx + '">' + text + '</p>';
+      } else {
+        html += '<p class="reader-p" data-chunk-idx="' + origIdx + '">' + text + '</p>';
+      }
       // 渲染插图
       if (c.img) {
         const imgs = c.img.split(',');
@@ -3090,6 +3361,10 @@ App.switchVideoTab = function(tab) {
       setTimeout(function() { activeEl.scrollIntoView({block:'center',behavior:'smooth'}); }, 100);
     }
   }
+  // Update the fullscreen button label
+  this._updateFullscreenBtn();
+  // Reset smart fullscreen context when switching tabs
+  this._activeVideoTab = tab;
 };
 
 App.playVideoByP = function(p) {
@@ -3116,6 +3391,7 @@ App.playVideoChapter = function(c, preferP) {
     }
   }
   this._videoChapterId = c;
+  delete this._videoCurrentTime;  // clear saved position for new chapter
   
   // Update header
   document.getElementById('headerTitle').textContent = '第' + c + '集';
@@ -3160,6 +3436,7 @@ App.videoNext = function() {
 };
 
 App._fullscreenContext = null;  // 'video' | 'book' | null
+App._videoCurrentTime = null;   // saved position for resume on tab switch
 
 App.toggleFullscreen = function(context) {
   var self = this;
@@ -3236,6 +3513,68 @@ App._exitFullscreenState = function() {
   } catch(e) {}
   this._fullscreenContext = null;
 };
+
+// Context-aware fullscreen: 目录 tab → video, 全书 tab → book
+App.smartFullscreen = function() {
+  // If already in fullscreen, exit
+  if (document.fullscreenElement || this._fullscreenContext) {
+    this.exitFullscreen();
+    return;
+  }
+  // Determine context based on active tab in video page
+  var context = 'video';  // default
+  if (this.currentPage === 'video') {
+    var bookTab = document.getElementById('videoTabBook');
+    if (bookTab && bookTab.classList.contains('active')) {
+      context = 'book';
+    }
+  }
+  this.toggleFullscreen(context);
+  // Update the fullscreen button text
+  this._updateFullscreenBtn();
+};
+
+// Update fullscreen button label based on context
+App._updateFullscreenBtn = function() {
+  var btn = document.getElementById('videoFullscreenBtn');
+  if (!btn) return;
+  if (this.currentPage === 'video') {
+    var bookTab = document.getElementById('videoTabBook');
+    if (bookTab && bookTab.classList.contains('active')) {
+      btn.textContent = '⛶ 全屏阅读';
+    } else {
+      btn.textContent = '⛶ 全屏';
+    }
+  }
+};
+
+// ── Picture-in-Picture ──────────────────────────
+App.togglePip = function() {
+  var player = document.getElementById('videoPlayer');
+  if (!player) return;
+  
+  if (document.pictureInPictureElement) {
+    document.exitPictureInPicture().catch(function(){});
+  } else if (document.pictureInPictureEnabled) {
+    player.requestPictureInPicture().catch(function(){});
+  }
+};
+
+App._updatePipBtn = function() {
+  var btn = document.getElementById('videoPipBtn');
+  if (!btn) return;
+  btn.style.display = document.pictureInPictureEnabled ? '' : 'none';
+};
+
+// Update PiP button state on enter/leave
+document.addEventListener('enterpictureinpicture', function() {
+  var btn = document.getElementById('videoPipBtn');
+  if (btn) btn.textContent = '📺 退出画中画';
+});
+document.addEventListener('leavepictureinpicture', function() {
+  var btn = document.getElementById('videoPipBtn');
+  if (btn) btn.textContent = '📺 画中画';
+});
 
 // Listen for native fullscreen exit (ESC key, etc.)
 document.addEventListener('fullscreenchange', function() {
@@ -7096,7 +7435,7 @@ App.openHexDetail = function(id) {
       '<div class="guaci-section"><div class="section-label">小 象 · 六爻象辞</div></div>' +
       '<div class="yao-list">' + yaoHTML + '</div>' +
     '</div>' +
-    '<div class="detail-tab-content fp" id="tab-fp-' + id + '">' +
+    '<div class="detail-tab-content fp" id="tab-fp-' + id + '" data-hex-id="' + id + '">' +
       '<div class="fp-loading">加载傅佩荣解说…</div>' +
     '</div>' +
     '<div class="rv-section rv-relations" style="margin-top:16px">' +
@@ -7143,7 +7482,9 @@ App.switchHexTab = function(hexId, tab) {
   } else {
     origEl.classList.add('hidden'); origEl.classList.remove('active');
     fpEl.classList.add('active');
-    var content = FP_DATA[String(hexId)] || '暂无解说数据';
+    // 应用纠错
+    var correction = EDITOR.getFPCorrection(hexId);
+    var content = correction || FP_DATA[String(hexId)] || '暂无解说数据';
     fpEl.innerHTML = formatFP(content, hexId);
   }
 };

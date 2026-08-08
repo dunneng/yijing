@@ -1,5 +1,5 @@
 // Service Worker — 离线缓存
-const CACHE = 'yijing-zs-v6';
+const CACHE = 'yijing-zs-v7';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -9,6 +9,7 @@ self.addEventListener('install', e => {
         '/index.html',
         '/auth.js',
         '/sync.js',
+        '/editor.js',
         '/knowledge_zs_v3.js',
         '/yijing_core.js',
         '/video_map.js',
