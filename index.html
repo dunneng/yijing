@@ -814,6 +814,29 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
 .reader-p.corrected::after{content:' ✓已纠错';font-size:9px;color:var(--green,#2E5C4E);vertical-align:super}
 .edit-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;z-index:9998;pointer-events:none;transition:opacity .3s;display:none}
 .edit-hint.show{display:block}
+/* ── API Key 设置弹窗 ── */
+.key-dialog-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.7);z-index:9999;justify-content:center;align-items:center}
+.key-dialog-overlay.show{display:flex}
+.key-dialog{background:var(--card);border-radius:16px;padding:24px 20px;
+  max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.key-dialog h3{font-size:16px;color:var(--text);margin-bottom:6px}
+.key-dialog .key-desc{font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.5}
+.key-dialog input{width:100%;padding:10px;border:1px solid var(--divider);border-radius:8px;
+  font-size:12px;font-family:monospace;background:var(--bg);color:var(--text);box-sizing:border-box}
+.key-dialog .key-hint{font-size:10px;color:var(--sub);margin-top:6px}
+.key-dialog .key-hint a{color:var(--gold)}
+.key-dialog .key-btns{display:flex;gap:8px;margin-top:14px;justify-content:center}
+.key-btn{padding:8px 20px;border-radius:20px;font-size:12px;cursor:pointer;
+  letter-spacing:1px;font-family:inherit;border:none;transition:all .15s}
+.key-btn.save{background:var(--nav);color:var(--gold)}
+.key-btn.del{background:transparent;color:var(--red);border:1px solid var(--red)}
+.key-btn.cancel{background:transparent;color:var(--sub)}
+.key-btn:active{transform:scale(.96)}
+/* key状态指示 */
+.key-indicator{font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;letter-spacing:.5px}
+.key-indicator.set{background:rgba(46,92,78,.15);color:var(--green,#2E5C4E)}
+.key-indicator.unset{background:rgba(184,57,43,.1);color:var(--red)}
 
 </style>
 </head>
@@ -892,6 +915,25 @@ mark{background:rgba(201,169,110,.25);color:var(--gold);padding:1px 2px;border-r
     <div class="input-suggestions" id="inputSuggestions"></div>
     <input class="input-box" id="chatInput" placeholder="问任何易经问题…" onkeydown="if(event.key==='Enter')App.send()">
     <button class="send-btn" onclick="App.send()">↑</button>
+  </div>
+  <!-- API Key 状态指示 -->
+  <div style="text-align:center;padding:4px">
+    <span class="key-indicator unset" id="keyIndicator" onclick="App.showKeyDialog()">🔑 未设置AI Key</span>
+  </div>
+</div>
+
+<!-- ═══ API Key 设置弹窗 ═══ -->
+<div class="key-dialog-overlay" id="keyDialogOverlay">
+  <div class="key-dialog">
+    <h3>🔑 设置 DeepSeek API Key</h3>
+    <p class="key-desc">AI 对话需要 DeepSeek API Key。<br>Key 只保存在你的浏览器中，不会上传。</p>
+    <input type="password" id="keyInput" placeholder="sk-..." autocomplete="off">
+    <p class="key-hint">去 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 免费申请</p>
+    <div class="key-btns">
+      <button class="key-btn save" onclick="App.saveApiKey()">保存</button>
+      <button class="key-btn del" id="keyDeleteBtn" style="display:none" onclick="App.deleteApiKey()">删除</button>
+      <button class="key-btn cancel" onclick="App.closeKeyDialog()">取消</button>
+    </div>
   </div>
 </div>
 
@@ -1093,6 +1135,23 @@ function buildHexChapters() {
   }
 }
 
+// ── 纠错感知：获取经过 corrections.json 修正后的文本 ──
+function getCorrectedZSChunk(idx) {
+  if (typeof EDITOR !== 'undefined' && EDITOR.getChunkCorrection) {
+    var corr = EDITOR.getChunkCorrection(idx);
+    if (corr) return corr;
+  }
+  return (idx >= 0 && idx < ZS_CHUNKS.length) ? ZS_CHUNKS[idx].x : '';
+}
+
+function getCorrectedFPText(hexId) {
+  if (typeof EDITOR !== 'undefined' && EDITOR.getFPCorrection) {
+    var corr = EDITOR.getFPCorrection(hexId);
+    if (corr) return corr;
+  }
+  return (FP_DATA && FP_DATA[String(hexId)]) ? FP_DATA[String(hexId)] : '';
+}
+
 // ── 智能解析卦相关的提问，精准提取FP_DATA段落 ──
 // 返回 { hexNum, section, text } — section: 'all'|'guaci'|'tuan'|'daxiang'|'yao-N'
 function parseHexQuery(query) {
@@ -1100,7 +1159,7 @@ function parseHexQuery(query) {
   if (!hexNum) return null;
   if (typeof FP_DATA === 'undefined' || !FP_DATA[String(hexNum)]) return { hexNum: hexNum, section: 'all', text: '' };
   
-  var fpText = FP_DATA[String(hexNum)];
+  var fpText = getCorrectedFPText(hexNum);
   // 去掉开头数字
   fpText = fpText.replace(/^\d+/, '');
   
@@ -1267,6 +1326,7 @@ function keywordSearch(query) {
   // 4. 评分每个chunk
   for (let ci = 0; ci < ZS_CHUNKS.length; ci++) {
     const chunk = ZS_CHUNKS[ci];
+    const chunkText = getCorrectedZSChunk(ci);  // 用纠错后文本匹配
     let score = 0;
     
     // 关键词匹配（IDF加权）
@@ -1402,6 +1462,8 @@ const App = {
   init() {
     // 鉴权：尝试自动登录
     this._initAuth();
+    // Key 状态指示
+    this._initKeyUI();
     
     // 头部按钮默认显示"新对话"
     const ha = document.getElementById('headerAction');
@@ -1838,6 +1900,14 @@ const App = {
     var contextParts = [];
     for (var i = 0; i < results.length; i++) {
       var r = results[i];
+      // 应用纠错
+      if (r.chunk) {
+        var origIdx = ZS_CHUNKS.indexOf(r.chunk);
+        if (origIdx >= 0) {
+          var corrected = EDITOR.getChunkCorrection(origIdx);
+          if (corrected) r.text = corrected;
+        }
+      }
       var src = r.source || '';
       if (!src && r.chunk) {
         var ct = self.getChapterTitle(r.chunk);
@@ -1879,9 +1949,21 @@ const App = {
 
     // 获取 API 地址
     var apiKey = localStorage.getItem('yijing_deepseek_key') || '';
-    var apiBase = apiKey
-      ? 'https://api.deepseek.com'
-      : 'http://localhost:8766';
+    var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // 没 key 且不在本地 → 提示设置
+    if (!apiKey && !isLocal) {
+      var typing = document.querySelector('.msg.typing');
+      if (typing) typing.remove();
+      self.addMessage('bot',
+        '要使用 AI 对话，请先设置 DeepSeek API Key。<br><br>' +
+        '<span style="display:inline-block;padding:8px 20px;background:var(--nav);color:var(--gold);border-radius:20px;cursor:pointer;letter-spacing:1px" ' +
+        'onclick="App.showKeyDialog()">🔑 设置 API Key</span><br>' +
+        '<span style="font-size:10px;color:var(--sub)">Key 只保存在你的浏览器中，不会上传</span>');
+      return;
+    }
+    
+    var apiBase = apiKey ? 'https://api.deepseek.com' : 'http://localhost:8766';
 
     var headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
@@ -2722,6 +2804,51 @@ const App = {
   },
   
   headerAction() {},
+  
+  // ═══ API Key 管理 ═══
+  _initKeyUI() {
+    var key = localStorage.getItem('yijing_deepseek_key') || '';
+    this._updateKeyIndicator(!!key);
+  },
+  
+  showKeyDialog() {
+    var key = localStorage.getItem('yijing_deepseek_key') || '';
+    document.getElementById('keyInput').value = key;
+    document.getElementById('keyDeleteBtn').style.display = key ? '' : 'none';
+    document.getElementById('keyDialogOverlay').classList.add('show');
+  },
+  
+  closeKeyDialog() {
+    document.getElementById('keyDialogOverlay').classList.remove('show');
+  },
+  
+  saveApiKey() {
+    var key = document.getElementById('keyInput').value.trim();
+    if (!key) { alert('请输入 API Key'); return; }
+    if (!key.startsWith('sk-')) { alert('Key 格式不对，应该以 sk- 开头'); return; }
+    localStorage.setItem('yijing_deepseek_key', key);
+    this._updateKeyIndicator(true);
+    this.closeKeyDialog();
+  },
+  
+  deleteApiKey() {
+    localStorage.removeItem('yijing_deepseek_key');
+    document.getElementById('keyInput').value = '';
+    this._updateKeyIndicator(false);
+    this.closeKeyDialog();
+  },
+  
+  _updateKeyIndicator(hasKey) {
+    var el = document.getElementById('keyIndicator');
+    if (!el) return;
+    if (hasKey) {
+      el.className = 'key-indicator set';
+      el.innerHTML = '🔑 AI已就绪';
+    } else {
+      el.className = 'key-indicator unset';
+      el.innerHTML = '🔑 未设置AI Key';
+    }
+  },
 
   // ═══ 鉴权方法 ═══
   _initAuth() {
