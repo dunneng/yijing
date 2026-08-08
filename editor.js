@@ -63,10 +63,27 @@ const EDITOR = {
     return this._corrections.knowledge_zs_v3?.[String(chunkIdx)] || null;
   },
 
-  // ── 获取某个卦的 FP 纠错 ──
+  // ── 获取某个卦的 FP 纠错（重建全文）──
   getFPCorrection(hexId) {
     if (!this._corrections) return null;
-    return this._corrections.fupeirong_data?.[String(hexId)] || null;
+    var fpCorr = this._corrections.fupeirong_data || {};
+    var hexStr = String(hexId);
+    // 新格式：检查是否有以 "hexId_" 开头的分段纠错
+    var prefix = hexStr + '_';
+    var sectionKeys = Object.keys(fpCorr).filter(function(k) { return k.indexOf(prefix) === 0; });
+    if (sectionKeys.length === 0) {
+      // 旧格式：完整文本替换
+      return fpCorr[hexStr] || null;
+    }
+    // 新格式：按段落重建全文
+    if (typeof FP_DATA === 'undefined' || !FP_DATA[hexStr]) return null;
+    var baseText = FP_DATA[hexStr];
+    var sections = splitFPSections(baseText);
+    var correctedSections = sections.map(function(sec) {
+      var key = hexStr + '_' + sec.label;
+      return fpCorr[key] || sec.text;
+    });
+    return correctedSections.join('\n');
   },
 
   // ── 显示编辑弹窗 ──

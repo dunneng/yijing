@@ -1856,13 +1856,21 @@ const App = {
   // ── DeepSeek AI 对话 ──
   _deepSeekChat(query, context, results, callback) {
     var self = this;
-    var systemPrompt = '你是曾仕强教授《易经的智慧》的专属私教助手。\n' +
-      '请严格根据以下参考资料回答用户问题，用教授的口吻和风格。\n' +
-      '要求：\n' +
-      '1. 如果参考资料中有直接答案，就引用原文来回答\n' +
-      '2. 如果参考资料没有直接覆盖，请基于教授的思想体系进行合理延伸，并标注"延伸理解"\n' +
-      '3. 回答要简洁、有深度，不要太长（300字以内）\n' +
-      '4. 用通俗的语言解释古奥的概念';
+    var systemPrompt = '你是曾仕强教授《易经的智慧》的专属私教。\\n' +
+      '请严格根据以下参考资料回答，用曾仕强教授的口吻和风格。\\n' +
+      '\\n' +
+      '曾仕强教授的风格特点：\\n' +
+      '- 口语化、亲切，像长辈在跟你聊天，而不是上课\\n' +
+      '- 常用生活化的比喻，比如"这就好比我们吃饭..."、"就像你家那个水管..."\\n' +
+      '- 喜欢说"各位"、"我们中国人"、"老实讲"、"其实很简单"\\n' +
+      '- 把复杂概念讲得很接地气，不堆砌术语\\n' +
+      '- 语气诚恳、有温度，偶尔幽默\\n' +
+      '\\n' +
+      '要求：\\n' +
+      '1. 参考资料有直接答案 → 引用原文，用教授的风格转述\\n' +
+      '2. 参考资料没有直接覆盖 → 基于教授的思想体系延伸，标注"延伸理解"\\n' +
+      '3. 回答控制在200-400字，讲透一个点比什么都提一句好\\n' +
+      '4. 不要像教科书，要像聊天。不要用"首先、其次、最后"这种结构';
 
     var messages = [
       { role: 'system', content: systemPrompt },
@@ -2416,21 +2424,44 @@ const App = {
       return;
     }
 
-    // fp-text / fp-original: 从父元素的 data-hex-id 获取卦ID
-    const fpContainer = el.closest('[data-hex-id]');
-    if (fpContainer) {
-      const hexId = fpContainer.dataset.hexId;
-      const oldText = FP_DATA[hexId] || '';
-      if (!oldText) return;
-      const hexNames = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
+    // fp-text / fp-original / fp-section: 从父元素的 data-hex-id 和 data-fp-section 获取
+    var fpSection = el.closest('[data-fp-section]');
+    var fpContainer = el.closest('[data-hex-id]');
+    if (fpSection && fpContainer) {
+      var hexId = fpContainer.dataset.hexId;
+      var sectionLabel = fpSection.dataset.fpSection;
+      // 从原始 FP_DATA 提取该段落文本
+      var fullText = FP_DATA[String(hexId)] || '';
+      if (!fullText) return;
+      var sections = splitFPSections(fullText);
+      var sec = sections.find(function(s) { return s.label === sectionLabel; });
+      if (!sec) return;
+      var hexNames = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
         '同人','大有','谦','豫','随','蛊','临','观','噬嗑','贲','剥','复',
         '无妄','大畜','颐','大过','坎','离','咸','恒','遁','大壮','晋','明夷',
         '家人','睽','蹇','解','损','益','夬','姤','萃','升','困','井',
         '革','鼎','震','艮','渐','归妹','丰','旅','巽','兑','涣','节',
         '中孚','小过','既济','未济'];
-      const name = hexNames[parseInt(hexId)] || '';
-      EDITOR.show('fupeirong_data', hexId, oldText, '第' + hexId + '卦 ' + name + ' · 傅佩荣');
+      var name = hexNames[parseInt(hexId)] || '';
+      var label = '第' + hexId + '卦 ' + name + ' · ' + sectionLabel;
+      EDITOR.show('fupeirong_data', hexId + '_' + sectionLabel, sec.text, label);
       return;
+    }
+
+    // 兜底：旧版 fp-text（无 data-fp-section）—— 整卦编辑
+    if (fpContainer && !fpSection) {
+      var hexIdFallback = fpContainer.dataset.hexId;
+      var oldText = FP_DATA[hexIdFallback] || '';
+      if (oldText) {
+        var hexNames2 = ['','乾','坤','屯','蒙','需','讼','师','比','小畜','履','泰','否',
+          '同人','大有','谦','豫','随','蛊','临','观','噬嗑','贲','剥','复',
+          '无妄','大畜','颐','大过','坎','离','咸','恒','遁','大壮','晋','明夷',
+          '家人','睽','蹇','解','损','益','夬','姤','萃','升','困','井',
+          '革','鼎','震','艮','渐','归妹','丰','旅','巽','兑','涣','节',
+          '中孚','小过','既济','未济'];
+        var name2 = hexNames2[parseInt(hexIdFallback)] || '';
+        EDITOR.show('fupeirong_data', hexIdFallback, oldText, '第' + hexIdFallback + '卦 ' + name2 + ' · 傅佩荣');
+      }
     }
   },
 
@@ -2460,7 +2491,8 @@ const App = {
     if (!fpEl) return;
     const hexId = container.dataset.hexId || fpEl.closest('[data-hex-id]')?.dataset?.hexId;
     if (!hexId) return;
-    const content = FP_DATA[String(hexId)] || '暂无解说数据';
+    var correction = EDITOR.getFPCorrection(hexId);
+    var content = correction || FP_DATA[String(hexId)] || '暂无解说数据';
     fpEl.innerHTML = formatFP(content, hexId);
   },
 
@@ -7245,58 +7277,77 @@ function formatFP(text, hexId){
     '<span class="fp-hex-name">' + name + '</span>' +
     '<span class="fp-hex-sym">' + sym + '</span></div>';
 
+  // ── 按爻位拆分段落 ──
+  var sections = splitFPSections(text);
+  var sectionHTML = sections.map(function(sec, idx) {
+    return formatFPSection(sec.text, sec.label, idx === 0);
+  }).join('');
+
+  return '<div class="fp-text">' + headerHTML + sectionHTML + '</div>';
+}
+
+// ── 把 FP 文本按 卦辞/各爻 拆分 ──
+function splitFPSections(text) {
+  var sections = [];
+  // 找到第一个爻位标记
+  var firstYao = text.search(/\n(初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])/);
+  var headerEnd = firstYao >= 0 ? firstYao : text.length;
+
+  // 卦辞段（含卦名行）
+  sections.push({ label: '卦辞', text: text.substring(0, headerEnd) });
+
+  if (firstYao < 0) return sections;
+
+  var remaining = text.substring(headerEnd);
+  // 按爻位标记拆分
+  var parts = remaining.split(/\n(?=初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])/);
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i];
+    var labelMatch = part.match(/^(初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])/);
+    var label = labelMatch ? labelMatch[1] : ('段' + i);
+    sections.push({ label: label, text: part });
+  }
+  return sections;
+}
+
+// ── 渲染单个 FP 段落 ──
+function formatFPSection(text, label, isFirst) {
   var escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // ── Extract original texts: 卦辞 + 彖传 + 大象传 ──
-  var dotIdx = escaped.indexOf('。');
-  var yiwen1 = escaped.indexOf('【译文】');
-  var origParts = [];
-
-  if (dotIdx >= 0 && yiwen1 > dotIdx) {
-    origParts.push(escaped.substring(dotIdx + 1, yiwen1));
+  // 第一段（卦辞）：提取原文
+  var origHTML = '';
+  if (isFirst) {
+    var dotIdx = escaped.indexOf('。');
+    var yiwen1 = escaped.indexOf('【译文】');
+    if (dotIdx >= 0 && yiwen1 > dotIdx) {
+      var orig = escaped.substring(dotIdx + 1, yiwen1);
+      origHTML = '<div class="fp-original"><span class="fp-original-label">【原文】</span>' + orig + '</div>';
+    }
   }
 
-  var origHTML = origParts.length > 0
-    ? '<div class="fp-original"><span class="fp-original-label">【原文】</span>' + origParts.join('<br><br>') + '</div>'
-    : '';
+  var body = isFirst ? escaped.substring(escaped.indexOf('【译文】')) : escaped;
 
-  // ── Body: add 【原文】 markers before yao lines & 《彖》《象》 ──
-  var body = escaped.substring(yiwen1);
   body = body
-    // Mark yao lines
     .replace(/^(初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])/,'<span class="fp-original-label">【原文】</span>$1')
     .replace(/([。])\s*(初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])([。])/g,'$1<br><span class="fp-original-label">【原文】</span>$2$3')
     .replace(/\n(初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九])/g,'\n<span class="fp-original-label">【原文】</span>$1')
-    // Mark 《彖》《象》 headers  
     .replace(/\n(《[^》]+》曰[：:]?)/g,'\n<span class="fp-original-label">【原文】</span>$1')
-    // Highlight markers
     .replace(/【译文】/g,'<span class="fp-yiwen">【译文】</span>')
     .replace(/【注解】/g,'<span class="fp-zhujie">【注解】</span>')
-    // Bold symbols
-    // hex symbols are inline text, no wrapping needed
     .replace(/[⚊⚋]/g,'<b>$&</b>')
-    // Bold original text after 【原文】 label
     .replace(/(【原文】<\/span>)([^<]+)/g, '$1<b class="fp-yao">$2</b>')
-    // Line break before 译文
     .replace(/([。，；：])(<span class="fp-yiwen">)/g, '$1<br>$2')
-    // Numbered annotations on new lines
     .replace(/([①-⑩])/g,'<br>$1')
-    // Paragraph breaks from source \n\n
     .replace(/\n\n/g,'</div><div class="fp-paragraph">')
     .replace(/\n/g,'<br>');
 
-  // ── Mark 小象 block: plain text before 【译文】without header tag ──
   body = body.replace(/(<br>)([^<【]{10,})(<span class="fp-yiwen">)/g,
     '<br><span class="fp-original-label">【原文】</span><b class="fp-yao">$2</b>$3');
-  // ── Insert <hr> separator before each yao section ──
-  body = body
-    .replace(/(<br><span class="fp-original-label">【原文】<\/span><b[^>]*>(?:初[六九]|九[二三四五]|六[二三四五]|上[六九]|用[六九]))/g,
-      '<hr class="fp-sep">$1');
 
-  // ── Add separators before 《彖》《象》in body ──
-  body = body.replace(/(<span class="fp-original-label">【原文】<\/span><b[^>]*>《[彖象]》)/g,
-    '<hr class="fp-sep">$1');
-  return '<div class="fp-text">' + headerHTML + origHTML + '<div class="fp-paragraph fp-body">' + body + '</div></div>';
+  var sectionCls = isFirst ? 'fp-section fp-header-section' : 'fp-section';
+  return '<div class="' + sectionCls + '" data-fp-section="' + label + '">' +
+    origHTML + '<div class="fp-paragraph fp-body">' + body + '</div>' +
+    '<hr class="fp-sep"></div>';
 }
 
 
