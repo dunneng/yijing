@@ -14,7 +14,7 @@
  */
 const EDITOR = {
   _repo: 'dunneng/yijing',
-  _branch: 'main',
+  _branch: 'master',
   _path: 'corrections.json',
   _corrections: null,
   _sha: null,
