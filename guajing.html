@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>卦境红楼 — 六十四卦 × 红楼梦</title>
+<style>
+:root {
+  --bg: #F5EDE0;
+  --ink: #2B1B0E;
+  --red: #8B1A1A;
+  --gold: #B8860B;
+  --jade: #4A7C59;
+  --sub: #8B7355;
+  --divider: #D4C4A8;
+  --card: #FFF9F2;
+  --safe-bottom: env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:#1a1a1a;
+  display:flex;justify-content:center;align-items:center;
+  min-height:100%;
+  font-family:"Noto Serif SC","KaiTi","STKaiti","SimSun",serif;
+  -webkit-tap-highlight-color:transparent;
+}
+.app{width:100%;max-width:500px;height:100%;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* 顶部导航 */
+.header{
+  background:linear-gradient(180deg,#3B2412,#2B1B0E);
+  color:#D4C4A8;padding:12px 16px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:max(12px,env(safe-area-inset-top));
+  border-bottom:1px solid #5C3A1E;
+}
+.header-title{font-size:15px;font-weight:700;letter-spacing:3px;color:#E8D5B0}
+.header-nav{display:flex;gap:12px}
+.header-nav span{font-size:20px;cursor:pointer;color:#998877;transition:color .2s}
+.header-nav span:active{color:var(--gold)}
+
+/* 主内容 */
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* 卦象卡片 */
+.entry{padding:0;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* 孙温画 */
+.painting-wrap{
+  position:relative;width:100%;
+  background:var(--ink);overflow:hidden;
+}
+.painting-wrap img{
+  width:100%;display:block;
+  max-height:340px;object-fit:cover;
+}
+.painting-label{
+  position:absolute;bottom:8px;left:8px;
+  background:rgba(0,0,0,.6);color:#E8D5B0;
+  padding:2px 10px;border-radius:4px;
+  font-size:10px;letter-spacing:1px;
+}
+.painting-nav{
+  position:absolute;bottom:8px;right:8px;
+  display:flex;gap:4px;
+}
+.painting-nav span{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.4);
+}
+.painting-nav span.active{background:var(--gold)}
+
+/* 卦象头部 */
+.hex-header{
+  padding:16px 20px;text-align:center;
+  background:var(--card);border-bottom:1px solid var(--divider);
+}
+.hex-name{font-size:32px;font-weight:700;letter-spacing:6px;color:var(--ink)}
+.hex-num{font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:4px}
+.hex-guaci{font-size:18px;letter-spacing:4px;color:var(--red);margin:8px 0 4px}
+.hex-xiang{font-size:13px;color:var(--sub);letter-spacing:1px;line-height:1.8}
+.hex-lines-visual{display:flex;flex-direction:column;align-items:center;gap:5px;margin:12px 0}
+.hex-lines-visual .rv-line{height:7px;border-radius:4px}
+.hex-lines-visual .rv-line.yang{width:80px;background:var(--red)}
+.hex-lines-visual .rv-line.yin{width:80px;display:flex;gap:14px}
+.hex-lines-visual .rv-line.yin::before,.hex-lines-visual .rv-line.yin::after{content:'';flex:1;height:7px;background:var(--ink);border-radius:4px}
+
+/* 卦义 */
+.hex-meaning{padding:12px 20px;font-size:13px;line-height:1.9;color:var(--ink);letter-spacing:.5px;text-align:center;background:var(--card);border-bottom:1px solid var(--divider)}
+
+/* 对应红楼 */
+.hlm-section{padding:16px 20px;background:var(--bg)}
+.hlm-section-title{
+  font-size:12px;color:var(--gold);letter-spacing:2px;
+  margin-bottom:8px;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+}
+.hlm-chapter{font-size:14px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:12px}
+.hlm-excerpt{
+  font-size:13px;line-height:2;color:var(--ink);letter-spacing:.6px;
+  background:var(--card);border:1px solid var(--divider);
+  border-radius:10px;padding:14px 16px;margin-bottom:12px;
+  position:relative;
+}
+.hlm-excerpt::before{
+  content:'"';position:absolute;top:-8px;left:12px;
+  font-size:32px;color:var(--gold);opacity:.5;
+}
+.hlm-connection{
+  font-size:12px;line-height:1.9;color:var(--sub);letter-spacing:.5px;
+  padding:10px 14px;background:rgba(184,134,11,.05);
+  border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
+}
+
+/* 傅佩荣解说 */
+.fp-section{padding:12px 20px 20px}
+.fp-toggle{
+  width:100%;padding:10px;background:var(--card);border:1px solid var(--divider);
+  border-radius:8px;font-size:13px;color:var(--sub);cursor:pointer;
+  letter-spacing:1px;font-family:inherit;text-align:center;
+}
+.fp-toggle:active{background:#EDE4D0}
+.fp-content{
+  margin-top:12px;font-size:13px;line-height:2;color:var(--ink);
+  letter-spacing:.5px;display:none;
+}
+.fp-content.show{display:block}
+
+/* 底部索引 */
+.hex-index{
+  padding:16px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;
+}
+.hex-index-item{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+  border:1px solid var(--divider);background:var(--card);color:var(--ink);
+  transition:all .15s;letter-spacing:1px;
+}
+.hex-index-item:active{transform:scale(.92);}
+.hex-index-item.current{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* 底部导航 */
+.bottom-bar{
+  display:flex;background:linear-gradient(0deg,#3B2412,#2B1B0E);
+  flex-shrink:0;padding:8px 16px;padding-bottom:calc(8px + var(--safe-bottom));
+  border-top:1px solid #5C3A1E;gap:12px;align-items:center;justify-content:center;
+}
+.bottom-bar button{
+  padding:8px 20px;border:1px solid #5C3A1E;border-radius:20px;
+  background:transparent;color:#998877;font-size:13px;cursor:pointer;
+  letter-spacing:1px;font-family:inherit;transition:all .2s;
+}
+.bottom-bar button:active{background:rgba(184,134,11,.15);color:var(--gold)}
+.bottom-bar .current-hex{color:var(--gold);font-size:14px;font-weight:700;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">卦境红楼</div>
+    <div class="header-nav">
+      <span onclick="showIndex()" title="64卦索引">☰</span>
+    </div>
+  </div>
+
+  <!-- 卦象阅读页 -->
+  <div class="main" id="entryView"></div>
+
+  <!-- 64卦索引页 -->
+  <div class="main" id="indexView" style="display:none">
+    <div style="text-align:center;padding:16px;font-size:14px;color:var(--sub);letter-spacing:2px">点击卦名跳转</div>
+    <div class="hex-index" id="hexIndex"></div>
+  </div>
+
+  <!-- 底部导航条 -->
+  <div class="bottom-bar">
+    <button onclick="prevHex()">◀ 上一卦</button>
+    <span class="current-hex" id="currentHexLabel">乾卦</span>
+    <button onclick="nextHex()">下一卦 ▶</button>
+  </div>
+</div>
+
+<script src="hexagram_lines.js"></script>
+<script>
+// ═══════════════════════════════════════
+//  卦境红楼 — 六十四卦 × 红楼梦
+// ═══════════════════════════════════════
+
+let DATA = [];
+let currentIdx = 0;
+let currentPainting = 0;
+
+// 加载数据
+fetch('hexagram_hlm_mapping.json')
+  .then(r=>r.json())
+  .then(data=>{
+    DATA = data;
+    init();
+  })
+  .catch(e=>{
+    console.error('加载映射数据失败:', e);
+    document.getElementById('entryView').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--sub)">请先运行 build_mapping.py 生成 hexagram_hlm_mapping.json</div>';
+  });
+
+function init(){
+  // 从URL参数或localStorage获取当前卦
+  const p = new URLSearchParams(location.search);
+  const startId = parseInt(p.get('hex')) || 1;
+  currentIdx = DATA.findIndex(d=>d.hexId===startId);
+  if (currentIdx<0) currentIdx=0;
+
+  renderEntry();
+  renderIndex();
+  updateLabel();
+}
+
+function renderEntry(){
+  if (!DATA.length) return;
+  const entry = DATA[currentIdx];
+  const lines = getHexLines(entry.hexId);
+
+  // 孙温画
+  let paintingHTML = '';
+  if (entry.sunwen && entry.sunwen.length>0){
+    const p = entry.sunwen[currentPainting % entry.sunwen.length];
+    const imgPath = '../sunwen/docs/assets/sunwen/' + p.file;
+    const dots = entry.sunwen.map((_,i)=>`<span class="${i===currentPainting%entry.sunwen.length?'active':''}"></span>`).join('');
+    paintingHTML = `
+      <div class="painting-wrap" onclick="cyclePainting()">
+        <img src="${imgPath}" alt="${p.desc}" onerror="this.parentElement.style.display='none'">
+        <div class="painting-label">🎨 孙温绘 · 第${entry.chapter}回</div>
+        <div class="painting-nav">${dots}</div>
+      </div>`;
+  }
+
+  // 卦象线条
+  const linesHTML = lines.map(l=>`<div class="rv-line ${l?'yang':'yin'}"></div>`).join('');
+
+  const html = `
+    <div class="entry">
+      ${paintingHTML}
+      <div class="hex-header">
+        <div class="hex-num">第${entry.hexId}卦</div>
+        <div class="hex-name">${entry.hexName}</div>
+        <div class="hex-lines-visual">${linesHTML}</div>
+        <div class="hex-guaci">${entry.guaci}</div>
+        <div class="hex-xiang">《象》曰：${entry.xiang}</div>
+      </div>
+      <div class="hex-meaning">${entry.meaning}</div>
+
+      <div class="hlm-section">
+        <div class="hlm-section-title">🏮 对应红楼梦</div>
+        <div class="hlm-chapter">第${entry.chapter}回 · ${entry.scene}</div>
+        <div class="hlm-excerpt">${entry.excerpt||'(原文待提取)'}</div>
+        <div class="hlm-connection">${entry.connection}</div>
+      </div>
+
+      <div class="fp-section">
+        <button class="fp-toggle" onclick="toggleFP(this)">📖 傅佩荣白话解说</button>
+        <div class="fp-content" id="fpContent">加载中…</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('entryView').innerHTML = html;
+  document.getElementById('entryView').scrollTop = 0;
+  currentPainting = 0;
+
+  // 加载傅佩荣解说
+  loadFP(entry.hexId);
+}
+
+function getHexLines(hexId){
+  if (typeof HEXAGRAM_LINES !== 'undefined' && HEXAGRAM_LINES[hexId]){
+    return [...HEXAGRAM_LINES[hexId]].reverse();
+  }
+  // fallback
+  const bagua = [[1,1,1],[1,1,0],[1,0,1],[0,0,1],[0,1,1],[0,1,0],[1,0,0],[0,0,0]];
+  const up = Math.floor((hexId-1)/8), lo = (hexId-1)%8;
+  return [...bagua[lo],...bagua[up]].reverse();
+}
+
+function loadFP(hexId){
+  const el = document.getElementById('fpContent');
+  if (typeof FP_DATA !== 'undefined' && FP_DATA[String(hexId)]){
+    let text = FP_DATA[String(hexId)];
+    // 清理
+    text = text.replace(/^\d+/, '').trim();
+    // 找到第一个爻的起始位置，只取前面的卦辞+彖传+大象
+    const yaoIdx = text.search(/初[九六]/);
+    const excerpt = yaoIdx>0 ? text.substring(0,yaoIdx) : text.substring(0,600);
+    el.textContent = excerpt || '(暂无解说)';
+  } else {
+    el.textContent = '(暂无傅佩荣解说数据)';
+  }
+}
+
+function toggleFP(btn){
+  const content = btn.nextElementSibling;
+  content.classList.toggle('show');
+  btn.textContent = content.classList.contains('show') ? '📖 傅佩荣白话解说 ▲' : '📖 傅佩荣白话解说';
+}
+
+function cyclePainting(){
+  const entry = DATA[currentIdx];
+  if (entry.sunwen && entry.sunwen.length>1){
+    currentPainting = (currentPainting+1) % entry.sunwen.length;
+    renderEntry();
+    document.getElementById('entryView').scrollTop = 0;
+  }
+}
+
+function prevHex(){
+  currentIdx = (currentIdx-1+DATA.length) % DATA.length;
+  renderEntry();
+  renderIndex();
+  updateLabel();
+}
+
+function nextHex(){
+  currentIdx = (currentIdx+1) % DATA.length;
+  renderEntry();
+  renderIndex();
+  updateLabel();
+}
+
+function goToHex(hexId){
+  const idx = DATA.findIndex(d=>d.hexId===hexId);
+  if (idx>=0){
+    currentIdx = idx;
+    renderEntry();
+    showEntry();
+    updateLabel();
+  }
+}
+
+function updateLabel(){
+  const entry = DATA[currentIdx];
+  document.getElementById('currentHexLabel').textContent =
+    (entry?entry.hexName:'') + '卦 · 第'+(entry?entry.hexId:'')+'卦';
+}
+
+// 64卦索引
+function renderIndex(){
+  const container = document.getElementById('hexIndex');
+  if (!DATA.length) return;
+  container.innerHTML = DATA.map(e=>{
+    const cls = e.hexId===DATA[currentIdx].hexId ? 'hex-index-item current' : 'hex-index-item';
+    return `<div class="${cls}" onclick="goToHex(${e.hexId})">${e.hexName}</div>`;
+  }).join('');
+}
+
+function showIndex(){
+  document.getElementById('entryView').style.display='none';
+  document.getElementById('indexView').style.display='block';
+  renderIndex();
+}
+
+function showEntry(){
+  document.getElementById('entryView').style.display='block';
+  document.getElementById('indexView').style.display='none';
+}
+
+// 点击索引中的任意卦后回到阅读页
+document.getElementById('hexIndex').addEventListener('click', function(e){
+  if (e.target.classList.contains('hex-index-item')){
+    showEntry();
+  }
+});
+
+// 键盘/滑动支持
+document.addEventListener('keydown', function(e){
+  if (e.key==='ArrowLeft') prevHex();
+  if (e.key==='ArrowRight') nextHex();
+});
+
+// 触摸滑动
+let touchStartX = 0;
+document.addEventListener('touchstart', e=>{ touchStartX = e.touches[0].clientX });
+document.addEventListener('touchend', e=>{
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff)>80){
+    if (diff>0) prevHex();
+    else nextHex();
+  }
+});
+</script>
+</body>
+</html>

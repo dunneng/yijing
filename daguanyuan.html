@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2B1B0E">
+<title>大观园 · 卦中境</title>
+<style>
+:root {
+  --bg: #F5EDE0;
+  --scroll: #FBF6EC;
+  --ink: #2B1B0E;
+  --red: #8B1A1A;
+  --gold: #B8860B;
+  --jade: #4A7C59;
+  --sub: #8B7355;
+  --divider: #D4C4A8;
+  --card: #FFF9F2;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:#1a1a1a;
+  display:flex;justify-content:center;align-items:center;
+  min-height:100%;
+  font-family:"Noto Serif SC","KaiTi","STKaiti","SimSun",serif;
+  -webkit-tap-highlight-color:transparent;
+}
+.app{
+  width:100%;max-width:430px;height:100%;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  overflow:hidden;position:relative;
+}
+
+/* ── 顶部 ── */
+.header{
+  background:linear-gradient(180deg, #3B2412 0%, #2B1B0E 100%);
+  color:#D4C4A8;
+  padding:14px 16px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:max(14px, env(safe-area-inset-top));
+  border-bottom:1px solid #5C3A1E;
+}
+.header-title{font-size:15px;font-weight:700;letter-spacing:3px;color:#E8D5B0;}
+.header-sub{font-size:10px;color:#8B6F4F;letter-spacing:1px;}
+.header-day{font-size:11px;color:#B8860B;letter-spacing:1px;}
+
+/* ── 主内容区 ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+
+/* ── 开场画面 ── */
+.splash{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;text-align:center;min-height:100%;
+}
+.splash-gate{font-size:56px;margin-bottom:16px;opacity:0;animation:fadeIn 1s .3s forwards;}
+.splash-title{font-size:24px;font-weight:700;letter-spacing:6px;color:var(--ink);margin-bottom:6px;opacity:0;animation:fadeIn 1s .6s forwards;}
+.splash-sub{font-size:13px;color:var(--sub);letter-spacing:2px;margin-bottom:32px;opacity:0;animation:fadeIn 1s .9s forwards;}
+.splash-desc{font-size:13px;line-height:2;color:var(--sub);letter-spacing:1px;margin-bottom:32px;opacity:0;animation:fadeIn 1s 1.2s forwards;}
+.splash-start{
+  padding:14px 40px;background:var(--red);color:#fff;border:none;
+  border-radius:24px;font-size:16px;font-weight:700;cursor:pointer;
+  letter-spacing:3px;font-family:inherit;
+  box-shadow:0 4px 20px rgba(139,26,26,.3);
+  transition:all .2s;opacity:0;animation:fadeIn 1s 1.5s forwards;
+}
+.splash-start:active{transform:scale(.95);}
+@keyframes fadeIn{to{opacity:1;}}
+
+/* ── 游戏主界面 ── */
+.game-area{padding:16px;display:flex;flex-direction:column;gap:16px;}
+
+/* 场景卡片 */
+.scene-card{
+  background:var(--scroll);
+  border:1px solid var(--divider);
+  border-radius:12px;
+  padding:20px 16px;
+  position:relative;
+  box-shadow:0 2px 12px rgba(0,0,0,.04);
+}
+.scene-card::before{
+  content:'';position:absolute;top:0;left:16px;right:16px;
+  height:3px;background:linear-gradient(90deg, var(--red), var(--gold));
+  border-radius:0 0 2px 2px;
+}
+.scene-location{
+  font-size:11px;color:var(--gold);letter-spacing:2px;
+  margin-bottom:8px;font-weight:700;
+}
+.scene-text{
+  font-size:14px;line-height:2;color:var(--ink);letter-spacing:.8px;
+}
+.scene-text .name{
+  color:var(--red);font-weight:700;
+}
+.scene-text .hex-hint{
+  display:inline-block;background:rgba(184,134,11,.1);
+  padding:1px 6px;border-radius:4px;color:var(--gold);
+  font-size:12px;letter-spacing:1px;margin:0 2px;
+}
+
+/* 选择按钮 */
+.choices-area{margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+.choice-btn{
+  width:100%;padding:12px 16px;
+  background:var(--card);border:1px solid var(--divider);
+  border-radius:10px;font-size:13px;color:var(--ink);
+  cursor:pointer;letter-spacing:1px;font-family:inherit;
+  text-align:left;transition:all .15s;
+  display:flex;align-items:center;gap:8px;
+}
+.choice-btn:active{background:#EDE4D0;transform:scale(.98);}
+.choice-btn .choice-letter{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--red);color:#fff;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-weight:700;
+}
+
+/* 卦象显示 */
+.hex-reveal{
+  text-align:center;padding:16px 0;
+  animation:fadeIn .5s ease;
+}
+.hex-reveal .hex-name{
+  font-size:28px;font-weight:700;letter-spacing:4px;
+  color:var(--ink);margin-bottom:4px;
+}
+.hex-reveal .hex-subtitle{
+  font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:8px;
+}
+.hex-visual{display:flex;flex-direction:column;align-items:center;gap:5px;margin:12px 0;}
+.hex-visual .rv-line{height:7px;border-radius:4px;transition:all .3s;}
+.hex-visual .rv-line.yang{width:90px;background:var(--red);}
+.hex-visual .rv-line.yin{width:90px;display:flex;gap:14px;}
+.hex-visual .rv-line.yin::before,.hex-visual .rv-line.yin::after{content:'';flex:1;height:7px;background:var(--ink);border-radius:4px;}
+
+/* 摇卦按钮 */
+.divine-area{text-align:center;padding:20px 0;}
+.divine-btn{
+  padding:16px 36px;background:var(--red);color:#fff;border:none;
+  border-radius:24px;font-size:16px;font-weight:700;cursor:pointer;
+  letter-spacing:2px;font-family:inherit;
+  box-shadow:0 4px 16px rgba(139,26,26,.25);
+  transition:all .2s;
+}
+.divine-btn:active{transform:scale(.95);}
+.divine-btn.waiting{opacity:.6;pointer-events:none;}
+.divine-hint{font-size:12px;color:var(--sub);margin-top:8px;letter-spacing:1px;}
+
+/* 状态栏 */
+.status-row{
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+.status-chip{
+  background:var(--card);border:1px solid var(--divider);
+  border-radius:20px;padding:6px 12px;font-size:11px;
+  color:var(--sub);letter-spacing:1px;
+}
+.status-chip .val{color:var(--ink);font-weight:700;}
+
+/* ── 角色关系面板 ── */
+.relations-panel{
+  background:var(--card);border:1px solid var(--divider);
+  border-radius:12px;padding:12px;margin-top:12px;
+}
+.relations-title{font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;font-weight:700;}
+.rel-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 0;border-bottom:1px solid var(--divider);font-size:12px;
+}
+.rel-item:last-child{border-bottom:none;}
+.rel-name{color:var(--ink);letter-spacing:1px;}
+.rel-bar-wrap{width:100px;height:4px;background:var(--divider);border-radius:2px;overflow:hidden;}
+.rel-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
+.rel-bar-fill.good{background:var(--jade);}
+.rel-bar-fill.bad{background:var(--red);}
+.rel-bar-fill.neutral{background:var(--gold);}
+.rel-val{font-size:10px;color:var(--sub);width:24px;text-align:right;}
+
+/* ── 设置弹窗 ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;justify-content:center;align-items:center;padding:20px;}
+.overlay.show{display:flex;}
+.modal{
+  background:var(--bg);border-radius:16px;width:100%;max-width:380px;
+  overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.modal-header{background:var(--red);color:#fff;padding:16px 20px;font-size:14px;font-weight:700;letter-spacing:2px;}
+.modal-body{padding:16px 20px;}
+.modal-body label{display:block;font-size:12px;color:var(--sub);letter-spacing:1px;margin-bottom:4px;}
+.modal-body input{
+  width:100%;padding:10px 14px;border:1px solid var(--divider);
+  border-radius:8px;font-size:14px;font-family:inherit;
+  background:var(--card);color:var(--ink);outline:none;margin-bottom:12px;
+}
+.modal-body input:focus{border-color:var(--gold);}
+.modal-actions{display:flex;gap:8px;}
+.modal-actions button{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  font-size:13px;cursor:pointer;letter-spacing:1px;font-family:inherit;
+}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-secondary{background:var(--divider);color:var(--ink);}
+
+/* ── 加载动画 ── */
+.loading{
+  text-align:center;padding:30px;
+}
+.loading-dots{display:inline-flex;gap:6px;}
+.loading-dots span{
+  width:8px;height:8px;border-radius:50%;background:var(--gold);
+  animation:dotPulse 1.4s infinite;
+}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes dotPulse{0%,60%,100%{opacity:.3;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+.loading-text{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:1px;}
+
+/* ── 通用 ── */
+.hidden{display:none!important;}
+.scroll-bottom{padding-bottom:calc(24px + var(--safe-bottom));}
+
+/* ── 生平记录 ── */
+.journal-entry{
+  background:var(--card);border:1px solid var(--divider);
+  border-radius:10px;padding:12px 14px;margin-bottom:8px;
+  font-size:12px;line-height:1.8;color:var(--ink);letter-spacing:.6px;
+}
+.journal-entry .j-day{font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:4px;}
+.journal-entry .j-hex{color:var(--red);font-weight:700;}
+
+/* 底部导航 */
+.bottom-nav{
+  display:flex;background:linear-gradient(0deg, #3B2412 0%, #2B1B0E 100%);
+  flex-shrink:0;padding-bottom:var(--safe-bottom);
+  border-top:1px solid #5C3A1E;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 4px;color:#8B6F4F;font-size:10px;cursor:pointer;
+  transition:color .2s;gap:3px;
+}
+.nav-item.active{color:var(--gold);}
+.nav-icon{font-size:16px;}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+<!-- 顶部栏 -->
+<div class="header">
+  <div>
+    <div class="header-title">大观园 · 卦中境</div>
+    <div class="header-sub">摇一卦，走进大观园的一天</div>
+  </div>
+  <div class="header-day" id="headerDay">⚙️</div>
+</div>
+
+<!-- ═══ 主页 = 游戏 ═══ -->
+<div class="main page active" id="page-game">
+  <div id="gameContent"></div>
+</div>
+
+<!-- ═══ 关系页 ═══ -->
+<div class="main page" id="page-relations">
+  <div style="padding:16px;overflow-y:auto;">
+    <div class="relations-panel" id="relationsContent"></div>
+  </div>
+</div>
+
+<!-- ═══ 生平录 ═══ -->
+<div class="main page" id="page-journal">
+  <div style="padding:16px;overflow-y:auto;" id="journalContent"></div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+  <div class="nav-item active" data-page="game" onclick="switchTab('game')">
+    <span class="nav-icon">🏮</span>今日
+  </div>
+  <div class="nav-item" data-page="relations" onclick="switchTab('relations')">
+    <span class="nav-icon">👥</span>人情
+  </div>
+  <div class="nav-item" data-page="journal" onclick="switchTab('journal')">
+    <span class="nav-icon">📜</span>生平
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- 设置弹窗 -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-header">⚙️ 设置</div>
+    <div class="modal-body">
+      <label>DeepSeek API Key</label>
+      <input id="apiKeyInput" type="password" placeholder="sk-...">
+      <label>API Base URL（可选）</label>
+      <input id="apiBaseInput" placeholder="https://api.deepseek.com">
+      <div style="font-size:11px;color:var(--sub);margin-bottom:12px;line-height:1.6;">
+        Key 仅保存在本机浏览器中，不会上传。<br>
+        也可在 URL 后加 ?key=sk-xxx 传参。
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeSettings()">取消</button>
+        <button class="btn-primary" onclick="saveSettings()">保存</button>
+      </div>
+      <div style="margin-top:12px;text-align:center;">
+        <button class="btn-secondary" style="font-size:11px;padding:6px 14px;" onclick="resetGame()">🔄 重新开始</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="hexagram_lines.js"></script>
+<script>
+// ═══════════════════════════════════════
+//  大观园 · 卦中境 — 游戏引擎
+// ═══════════════════════════════════════
+
+// ── 六十四卦数据（精简版）──
+const HEXAGRAMS = [
+  {id:1,name:'乾',guaci:'元亨利贞',xiang:'天行健，君子以自强不息',meaning:'创始、通达、坚毅、正固。乾卦象征天，是纯阳之卦，代表创造力与领导力。'},
+  {id:2,name:'坤',guaci:'元亨利牝马之贞',xiang:'地势坤，君子以厚德载物',meaning:'柔顺、包容、承载。坤卦象征地，是纯阴之卦，代表接纳与滋养。'},
+  {id:3,name:'屯',guaci:'元亨利贞，勿用有攸往',xiang:'云雷屯，君子以经纶',meaning:'始生之难。万物初生，困难重重，需要耐心经营。'},
+  {id:4,name:'蒙',guaci:'亨，匪我求童蒙，童蒙求我',xiang:'山下出泉蒙，君子以果行育德',meaning:'蒙昧未开。启蒙需要主动求学，而非被动灌输。'},
+  {id:5,name:'需',guaci:'有孚，光亨，贞吉，利涉大川',xiang:'云上于天需，君子以饮食宴乐',meaning:'等待时机。云在天上，雨还未下，需要耐心等待。'},
+  {id:6,name:'讼',guaci:'有孚窒惕，中吉，终凶',xiang:'天与水违行讼，君子以作事谋始',meaning:'争讼与冲突。即便有理，能和解就不要对簿公堂。'},
+  {id:7,name:'师',guaci:'贞丈人吉，无咎',xiang:'地中有水师，君子以容民畜众',meaning:'统兵之道。用兵须师出有名，统帅须老成持重。'},
+  {id:8,name:'比',guaci:'吉，原筮元永贞，无咎',xiang:'地上有水比，君子以建万国亲诸侯',meaning:'亲附与团结。人与人之间需要真诚的亲近与信任。'},
+  {id:9,name:'小畜',guaci:'亨，密云不雨，自我西郊',xiang:'风行天上小畜，君子以懿文德',meaning:'小有积蓄。密云不雨，力量尚未充足，需要继续修养。'},
+  {id:10,name:'履',guaci:'履虎尾，不咥人，亨',xiang:'上天下泽履，君子以辨上下定民志',meaning:'践行礼仪。踩在老虎尾巴上却不被咬，全在分寸感。'},
+  {id:11,name:'泰',guaci:'小往大来，吉，亨',xiang:'天地交泰，后以财成天地之道',meaning:'通泰安和。天地交融，万物通达，是最好的状态。'},
+  {id:12,name:'否',guaci:'否之匪人，不利君子贞',xiang:'天地不交否，君子以俭德辟难',meaning:'闭塞不通。天地隔绝，君子此时应收敛自保。'},
+  {id:13,name:'同人',guaci:'同人于野，亨，利涉大川',xiang:'天与火同人，君子以类族辨物',meaning:'志同道合。在广阔天地间寻找同伴，坦诚相待。'},
+  {id:14,name:'大有',guaci:'元亨',xiang:'火在天上大有，君子以遏恶扬善',meaning:'丰盛富有。不仅是物质，更是德行的充实。'},
+  {id:15,name:'谦',guaci:'亨，君子有终',xiang:'地中有山谦，君子以裒多益寡',meaning:'谦虚。山藏在地中，真正的强大是不显露的。'},
+  {id:16,name:'豫',guaci:'利建侯行师',xiang:'雷出地奋豫，君子以作乐崇德',meaning:'愉悦安乐。但乐极生悲，耽于享乐必有祸端。'},
+  {id:17,name:'随',guaci:'元亨利贞，无咎',xiang:'泽中有雷随，君子以向晦入宴息',meaning:'随顺时势。顺应变化，不固执己见。'},
+  {id:18,name:'蛊',guaci:'元亨，利涉大川，先甲三日后甲三日',xiang:'山下有风蛊，君子以振民育德',meaning:'整治积弊。腐败不是一天形成的，清理需要时间。'},
+  {id:19,name:'临',guaci:'元亨利贞，至于八月有凶',xiang:'泽上有地临，君子以教思无穷',meaning:'居高临下。领导者要亲临现场，体察民情。'},
+  {id:20,name:'观',guaci:'盥而不荐，有孚颙若',xiang:'风行地上观，君子以省方观民设教',meaning:'观察省思。洗涤内心后再观察外物，才能看清本质。'},
+  {id:21,name:'噬嗑',guaci:'亨，利用狱',xiang:'雷电噬嗑，先王以明罚敕法',meaning:'咬合决断。断案需要刚正果决，像咬断硬物一样。'},
+  {id:22,name:'贲',guaci:'亨，小利有攸往',xiang:'山下有火贲，君子以明庶政无敢折狱',meaning:'文饰。装饰有其价值，但不能掩盖本质。'},
+  {id:23,name:'剥',guaci:'不利有攸往',xiang:'山附于地剥，上以厚下安宅',meaning:'剥落衰败。阳气被一层层剥去，此时宜守不宜进。'},
+  {id:24,name:'复',guaci:'亨，出入无疾，朋来无咎',xiang:'雷在地中复，先王以至日闭关',meaning:'回复生机。一阳来复，冬至之后春天就不远了。'},
+  {id:25,name:'无妄',guaci:'元亨利贞，其匪正有眚',xiang:'天下雷行物与无妄，先王以茂对时育万物',meaning:'不妄为。顺其自然，不存非分之想。'},
+  {id:26,name:'大畜',guaci:'利贞，不家食吉，利涉大川',xiang:'天在山中大畜，君子以多识前言往行',meaning:'大积蓄。蓄积的是德行和学识，而非仅仅是财富。'},
+  {id:27,name:'颐',guaci:'贞吉，观颐，自求口实',xiang:'山下有雷颐，君子以慎言语节饮食',meaning:'颐养。养生养德，言语谨慎，饮食有节。'},
+  {id:28,name:'大过',guaci:'栋桡，利有攸往，亨',xiang:'泽灭木大过，君子以独立不惧遁世无闷',meaning:'大为过甚。房梁弯曲了，是时候做非常之举了。'},
+  {id:29,name:'坎',guaci:'习坎，有孚，维心亨，行有尚',xiang:'水洊至习坎，君子以常德行习教事',meaning:'重重险难。危险叠加，惟有诚信和坚定可以渡过。'},
+  {id:30,name:'离',guaci:'利贞，亨，畜牝牛吉',xiang:'明两作离，大人以继明照于四方',meaning:'依附与光明。火必须依附在物体上才能燃烧发光。'},
+  {id:31,name:'咸',guaci:'亨，利贞，取女吉',xiang:'山上有泽咸，君子以虚受人',meaning:'感应。少男少女之间的相互感应，是人际关系的起点。'},
+  {id:32,name:'恒',guaci:'亨，无咎，利贞，利有攸往',xiang:'雷风恒，君子以立不易方',meaning:'恒久。真正的恒久不是死板不变，而是在变化中守住原则。'},
+  {id:33,name:'遁',guaci:'亨，小利贞',xiang:'天下有山遁，君子以远小人不恶而严',meaning:'退避。适时退让不是懦弱，而是保全自己。'},
+  {id:34,name:'大壮',guaci:'利贞',xiang:'雷在天上大壮，君子以非礼弗履',meaning:'强盛壮大。真正的强大是不做非礼之事。'},
+  {id:35,name:'晋',guaci:'康侯用锡马蕃庶，昼日三接',xiang:'明出地上晋，君子以自昭明德',meaning:'晋升前进。光明从地平线上升起，君子展现自己的德行。'},
+  {id:36,name:'明夷',guaci:'利艰贞',xiang:'明入地中明夷，君子以莅众用晦而明',meaning:'光明受伤。在黑暗的时刻，隐藏锋芒才能保全。'},
+  {id:37,name:'家人',guaci:'利女贞',xiang:'风自火出家人，君子以言有物而行有恒',meaning:'家庭之道。治家如治国，各守其位，各尽其责。'},
+  {id:38,name:'睽',guaci:'小事吉',xiang:'上火下泽睽，君子以同而异',meaning:'背离与差异。承认差异的存在，求同存异。'},
+  {id:39,name:'蹇',guaci:'利西南，不利东北，利见大人',xiang:'山上有水蹇，君子以反身修德',meaning:'艰难险阻。遇到困难时先反省自身。'},
+  {id:40,name:'解',guaci:'利西南，无所往，其来复吉',xiang:'雷雨作解，君子以赦过宥罪',meaning:'解除困难。雷雨之后天晴，困境终会过去。'},
+  {id:41,name:'损',guaci:'有孚，元吉，无咎，可贞',xiang:'山下有泽损，君子以惩忿窒欲',meaning:'减损。损己利人是修养，损人利已是灾祸。'},
+  {id:42,name:'益',guaci:'利有攸往，利涉大川',xiang:'风雷益，君子以见善则迁有过则改',meaning:'增益。见善则学习，有过则改正。'},
+  {id:43,name:'夬',guaci:'扬于王庭，孚号有厉',xiang:'泽上于天夬，君子以施禄及下居德则忌',meaning:'决断。当断则断，但方式要公正坦荡。'},
+  {id:44,name:'姤',guaci:'女壮，勿用取女',xiang:'天下有风姤，后以施命诰四方',meaning:'不期而遇。偶然相遇中藏着必然的因果。'},
+  {id:45,name:'萃',guaci:'亨，王假有庙，利见大人',xiang:'泽上于地萃，君子以除戎器戒不虞',meaning:'聚集。众人聚集时容易出乱子，需要有所防备。'},
+  {id:46,name:'升',guaci:'元亨，用见大人，勿恤',xiang:'地中生木升，君子以顺德积小以高大',meaning:'上升渐进。像树木生长一样，从微小处积累。'},
+  {id:47,name:'困',guaci:'亨，贞大人吉，无咎，有言不信',xiang:'泽无水困，君子以致命遂志',meaning:'困厄。泽中无水，困境是检验一个人真伪的时刻。'},
+  {id:48,name:'井',guaci:'改邑不改井，无丧无得',xiang:'木上有水井，君子以劳民劝相',meaning:'井养不穷。村庄可以搬迁，井永远在原地供养人。'},
+  {id:49,name:'革',guaci:'巳日乃孚，元亨利贞，悔亡',xiang:'泽中有火革，君子以治历明时',meaning:'变革。水火相息，变革需要时机和信任。'},
+  {id:50,name:'鼎',guaci:'元吉，亨',xiang:'木上有火鼎，君子以正位凝命',meaning:'鼎立更新。鼎是烹煮之器，把生变熟，把事情做成。'},
+  {id:51,name:'震',guaci:'亨，震来虩虩，笑言哑哑',xiang:'洊雷震，君子以恐惧修省',meaning:'震动警醒。雷声惊醒了沉睡的人，灾难让人反省。'},
+  {id:52,name:'艮',guaci:'艮其背，不获其身',xiang:'兼山艮，君子以思不出其位',meaning:'止于当止。知道什么时候停下来，是更高的智慧。'},
+  {id:53,name:'渐',guaci:'女归吉，利贞',xiang:'山上有木渐，君子以居贤德善俗',meaning:'渐进。女子出嫁是人生大事，一切都要按步骤来。'},
+  {id:54,name:'归妹',guaci:'征凶，无攸利',xiang:'泽上有雷归妹，君子以永终知敝',meaning:'婚嫁之事。名不正则言不顺，婚姻中的不正会带来长久问题。'},
+  {id:55,name:'丰',guaci:'亨，王假之，勿忧宜日中',xiang:'雷电皆至丰，君子以折狱致刑',meaning:'丰盛光明。但日过中天就会偏西，盛极必衰。'},
+  {id:56,name:'旅',guaci:'小亨，旅贞吉',xiang:'山上有火旅，君子以明慎用刑而不留狱',meaning:'旅居在外。人在旅途，谨言慎行才能平安。'},
+  {id:57,name:'巽',guaci:'小亨，利有攸往，利见大人',xiang:'随风巽，君子以申命行事',meaning:'顺入渗透。像风一样无孔不入，以柔克刚。'},
+  {id:58,name:'兑',guaci:'亨，利贞',xiang:'丽泽兑，君子以朋友讲习',meaning:'喜悦交流。两个泽相连，朋友之间互相滋润。'},
+  {id:59,name:'涣',guaci:'亨，王假有庙，利涉大川',xiang:'风行水上涣，君子以享于帝立庙',meaning:'涣散与凝聚。风吹水面，人心涣散时需要重新凝聚。'},
+  {id:60,name:'节',guaci:'亨，苦节不可贞',xiang:'泽上有水节，君子以制数度议德行',meaning:'节制。水在泽上，不节制就会泛滥，但过度节制也不好。'},
+  {id:61,name:'中孚',guaci:'豚鱼吉，利涉大川',xiang:'泽上有风中孚，君子以议狱缓死',meaning:'内心的诚信。连小猪小鱼都能感受到你的真诚。'},
+  {id:62,name:'小过',guaci:'亨，利贞，可小事不可大事',xiang:'山上有雷小过，君子以行过乎恭丧过乎哀',meaning:'小有过度。小事上过度一点无妨，大事不行。'},
+  {id:63,name:'既济',guaci:'亨小，利贞，初吉终乱',xiang:'水在火上既济，君子以思患而预防之',meaning:'事情完成。成功了反而更要小心，因为初吉终乱。'},
+  {id:64,name:'未济',guaci:'亨，小狐汔济，濡其尾，无攸利',xiang:'火在水上未济，君子以慎辨物居方',meaning:'尚未完成。小狐狸过河湿了尾巴，事情还差最后一步。'}
+];
+
+// ── 大观园角色 ──
+const CHARACTERS = {
+  '贾宝玉':{role:'怡红公子',nature:'天真率性，厌恶功名，对女孩有一种近乎痴的体贴',speak:'直白、感性、有时痴语，喜欢用比喻，对黛玉说话格外温柔小心',title:'宝二爷'},
+  '林黛玉':{role:'潇湘妃子',nature:'敏感聪慧，才华横溢，多愁善感，从不掩饰自己的情绪',speak:'尖刻中带幽默，话里有话，对宝玉常使小性子',title:'林姑娘'},
+  '薛宝钗':{role:'蘅芜君',nature:'稳重周全，通情达理，深谙人情世故但不高调',speak:'温和圆融，点到为止，从不把话说死，但每句都有深意',title:'宝姑娘'},
+  '王熙凤':{role:'琏二奶奶 / 管家',nature:'精明强干，心狠手辣但也通人情，贾府实际的掌权者',speak:'快人快语，幽默刻薄，一张嘴能说死人也能笑活人',title:'琏二奶奶'},
+  '贾母':{role:'老太太 / 老祖宗',nature:'慈祥但精明的大家长，贾府最高权威',speak:'语气慈爱但有威严，喜欢热闹，疼孙子孙女',title:'老太太'},
+  '王夫人':{role:'太太',nature:'表面吃斋念佛宽厚仁慈，实则手腕强硬，对宝玉管束极严',speak:'话不多，但一开口就是决定性的，常用"阿弥陀佛"起头',title:'太太'},
+  '贾政':{role:'老爷',nature:'古板严厉，对宝玉恨铁不成钢，内心其实也有温情',speak:'语气严厉，常用反问句，偶尔在贾母面前会软化',title:'老爷'},
+  '史湘云':{role:'枕霞旧友',nature:'豪爽开朗，心直口快，才情不输钗黛',speak:'爽朗大笑，说话不拐弯抹角，有时候咬舌把"二哥哥"叫成"爱哥哥"',title:'云姑娘'},
+  '探春':{role:'三姑娘',nature:'精明有主见，有治家之才，可惜是庶出',speak:'大气有格局，说话一针见血，敢做敢当',title:'三姑娘'},
+  '袭人':{role:'花大姑娘 / 宝玉首席丫鬟',nature:'温柔和顺，忠心但有自己的盘算',speak:'语气温柔体贴，像姐姐一样劝宝玉，偶尔也会说重话',title:'袭人'},
+  '晴雯':{role:'丫鬟',nature:'心高气傲，任性直率，美貌但性子急',speak:'嘴快不饶人，但心眼不坏，对宝玉忠心',title:'晴雯'},
+  '平儿':{role:'凤姐的贴身丫鬟 / 贾琏通房',nature:'善良通透，在夹缝中生存的智慧女性',speak:'说话有分寸，两边周全，常帮人圆场',title:'平儿'},
+};
+
+// ── 大观园地点 ──
+const LOCATIONS = [
+  '怡红院', '潇湘馆', '蘅芜苑', '稻香村', '秋爽斋', '栊翠庵',
+  '荣国府正厅', '贾母上房', '凤姐院子', '大观园沁芳亭',
+  '梨香院', '缀锦阁', '芦雪庵', '凸碧山庄', '凹晶溪馆',
+  '大观园正门', '贾氏宗祠', '荣禧堂', '宁国府会芳园',
+];
+
+// ── 事件模板（用于当AI不可用时的本地生成）──
+const FALLBACK_EVENTS = [
+  {loc:'潇湘馆',setup:'你路过潇湘馆，听见黛玉在窗下低声吟诗。她似乎没有察觉到你。'}
+];
+
+// ═══════════════════════
+//  状态管理
+// ═══════════════════════
+let STATE = {
+  day: 1,
+  relations: {},    // {角色名: -5 ~ +5}
+  hexHistory: [],   // [{day, hexId, hexName, context}]
+  choices: [],      // [{day, scene, choice}]
+  started: false,
+};
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem('daguan_state');
+    if (raw) STATE = JSON.parse(raw);
+  } catch(e){}
+  // 初始化关系
+  for (let name in CHARACTERS) {
+    if (!(name in STATE.relations)) STATE.relations[name] = 0;
+  }
+}
+function saveState(){
+  localStorage.setItem('daguan_state', JSON.stringify(STATE));
+}
+
+// API Key 管理
+function getApiKey(){
+  // 1. URL 参数
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('key')) return p.get('key');
+  // 2. localStorage
+  return localStorage.getItem('daguan_api_key') || '';
+}
+function getApiBase(){
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('base')) return p.get('base');
+  return localStorage.getItem('daguan_api_base') || 'https://api.deepseek.com';
+}
+
+// ═══════════════════════
+//  UI 渲染
+// ═══════════════════════
+function switchTab(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById('page-'+page);
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const nav = document.querySelector('[data-page="'+page+'"]');
+  if (nav) nav.classList.add('active');
+
+  if (page === 'relations') renderRelations();
+  if (page === 'journal') renderJournal();
+}
+
+function updateHeader(){
+  document.getElementById('headerDay').textContent = '第' + STATE.day + '日';
+}
+
+// ── 主页渲染 ──
+function renderSplash(){
+  const gc = document.getElementById('gameContent');
+  gc.innerHTML = `
+    <div class="splash">
+      <div class="splash-gate">🏮</div>
+      <div class="splash-title">大观园·卦中境</div>
+      <div class="splash-sub">摇一卦，走进大观园的一天</div>
+      <div class="splash-desc">你不是读者，你是大观园里的人。<br>每天一卦，一段际遇，一个抉择。<br>你的选择会影响你和所有人的关系。<br><br>六十四卦为骨，红楼梦为肉，<br>AI 为魂，你为本。</div>
+      <button class="splash-start" onclick="startGame()">🏮 进入大观园</button>
+    </div>
+  `;
+}
+
+function startGame(){
+  STATE.started = true; saveState();
+  renderGame();
+}
+
+function renderGame(){
+  updateHeader();
+  const gc = document.getElementById('gameContent');
+
+  // 今天是否已经摇过卦
+  const todayHex = STATE.hexHistory.find(h=>h.day===STATE.day);
+
+  if (!todayHex) {
+    // 还没摇卦 → 显示摇卦界面
+    gc.innerHTML = `
+      <div class="game-area scroll-bottom">
+        <div class="scene-card">
+          <div class="scene-location">📅 第 ${STATE.day} 天 · 大观园</div>
+          <div class="scene-text" style="text-align:center;padding:10px 0;">
+            晨光熹微，大观园里鸟鸣阵阵。<br>
+            你整了整衣冠，准备开始新的一天。<br><br>
+            <span style="color:var(--sub);font-size:12px;">
+            在心里默念今日所虑之事，<br>然后摇一卦，看看今日的际遇。
+            </span>
+          </div>
+        </div>
+        <div class="divine-area">
+          <button class="divine-btn" id="divineBtn" onclick="castHexagram()">🎲 摇一卦</button>
+          <div class="divine-hint">三枚铜钱，六次摇动，得今日之卦</div>
+        </div>
+        <div style="text-align:center;margin-top:8px;">
+          <span style="font-size:11px;color:var(--sub);letter-spacing:1px;">
+            已走过 ${STATE.day-1} 天 · 经历过 ${STATE.hexHistory.length} 卦
+          </span>
+        </div>
+      </div>
+    `;
+  } else if (todayHex.narrative) {
+    // 已经摇过且生成了剧情 → 显示今天的剧情
+    renderTodayScene(todayHex);
+  } else {
+    // 摇过了但还没生成剧情（异常情况）
+    renderTodayScene(todayHex);
+  }
+}
+
+// ── 铜钱摇卦 ──
+function castHexagram(){
+  const btn = document.getElementById('divineBtn');
+  if (!btn) return;
+  btn.classList.add('waiting');
+  btn.textContent = '摇卦中…';
+
+  // 模拟铜钱摇动
+  const lines = [];
+  for (let i=0;i<6;i++) lines.push(Math.random()<0.5?1:0);
+  // 转成卦的索引（简化：直接用随机索引）
+  const hexId = Math.floor(Math.random()*64)+1;
+  const hex = HEXAGRAMS[hexId-1];
+
+  // 根据卦ID获取真实爻象
+  let linesVisual;
+  if (typeof HEXAGRAM_LINES !== 'undefined' && HEXAGRAM_LINES[hexId]) {
+    // 从 hexagram_lines.js 获取真实数据（顺序从下到上，显示时反转）
+    linesVisual = [...HEXAGRAM_LINES[hexId]].reverse();
+  } else {
+    // 回退：从八卦推算
+    const baguaLines = [
+      [1,1,1],[1,1,0],[1,0,1],[0,0,1],[0,1,1],[0,1,0],[1,0,0],[0,0,0] // 乾兑离震巽坎艮坤
+    ];
+    const upperIdx = Math.floor((hexId-1)/8);
+    const lowerIdx = (hexId-1)%8;
+    linesVisual = [...baguaLines[lowerIdx], ...baguaLines[upperIdx]].reverse();
+  }
+
+  setTimeout(()=>{
+    const gc = document.getElementById('gameContent');
+    gc.innerHTML = `
+      <div class="game-area scroll-bottom">
+        <div class="hex-reveal">
+          <div class="hex-name">${hex.name}卦</div>
+          <div class="hex-subtitle">第${hex.id}卦 · ${hex.guaci}</div>
+          <div class="hex-visual">
+            ${linesVisual.map(l=>`<div class="rv-line ${l?'yang':'yin'}"></div>`).join('')}
+          </div>
+          <div style="font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">《象》曰：${hex.xiang}</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.8;max-width:320px;margin:0 auto;letter-spacing:.5px;">${hex.meaning}</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-location">✨ 卦象已显</div>
+          <div class="scene-text" style="text-align:center;">
+            今日卦象：<b style="color:var(--red);font-size:16px;">${hex.name}卦</b><br><br>
+            大观园的故事将围绕此卦展开。<br>AI 正在为你编织今日的际遇……
+          </div>
+        </div>
+        <div class="loading">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    `;
+
+    // 保存卦象
+    const record = {day:STATE.day, hexId:hex.id, hexName:hex.name, guaci:hex.guaci, xiang:hex.xiang, meaning:hex.meaning};
+    STATE.hexHistory.push(record);
+    saveState();
+
+    // 生成剧情
+    generateNarrative(record);
+  }, 800);
+}
+
+// ── AI 剧情生成 ──
+async function generateNarrative(hexRecord){
+  const useProxy = localStorage.getItem('daguan_use_proxy') !== 'false'; // 默认使用代理
+  let apiKey = getApiKey();
+  let apiBase = getApiBase();
+
+  // 如果没有 API Key，尝试用代理（从服务端读取）
+  if (!apiKey && useProxy) {
+    apiKey = 'proxy'; // 标记使用代理
+    apiBase = 'http://localhost:8766';
+  }
+
+  if (!apiKey) {
+    showSettingsPrompt('请先设置 DeepSeek API Key，或启动 game_server.py 代理。');
+    useFallbackNarrative(hexRecord);
+    return;
+  }
+
+  // 构建 prompt
+  const hex = HEXAGRAMS[hexRecord.hexId-1];
+  const recentChars = pickCharacters(3);
+  const location = LOCATIONS[Math.floor(Math.random()*LOCATIONS.length)];
+  const charSummaries = recentChars.map(c=>{
+    const data = CHARACTERS[c];
+    const rel = STATE.relations[c]||0;
+    const relDesc = rel>=3?'关系亲近':rel>=1?'关系不错':rel<=-3?'关系紧张':rel<=-1?'有些疏远':'一般';
+    return `${c}（${data.role}，${data.nature}。你与ta：${relDesc}）`;
+  }).join('\n');
+
+  // 历史摘要
+  const recentHistory = STATE.hexHistory.slice(-3).map(h=>`第${h.day}天：${h.hexName}卦 — ${h.summary||'(无记录)'}`).join('\n');
+
+  const prompt = `你是一位精通《红楼梦》和《周易》的叙事者。请以曹雪芹的文风（半文半白，典雅而不晦涩，细腻含蓄），为"我"（一个住在大观园里的年轻人）写一段今日的故事。
+
+【今日卦象】第${hex.id}卦：${hex.name}卦
+卦辞：${hex.guaci}
+大象：${hex.xiang}
+核心含义：${hex.meaning}
+
+【今日地点】${location}
+
+【出场角色】
+${charSummaries}
+
+【近期经历】
+${recentHistory || '（首次入园）'}
+
+【要求】
+1. 写一段300-400字的叙事，以"你"为主角（第二人称），发生在今日大观园中。
+2. 故事必须呼应今日卦象的核心含义（但不是直接说教，而是让卦义通过人物互动和情节自然体现）。
+3. 至少涉及2-3个角色，他们的言行要符合原著性格。
+4. 故事末尾安排一个需要"你"做出选择的困境/问题，提供3个选项。
+5. 选项分别对应不同的卦理态度——比如一个是"进"（刚健），一个是"退"（柔顺），一个是"守"（中道）。每个选项不标注态度，但通过措辞体现。
+
+请严格按以下JSON格式输出（不要输出其他内容）：
+{
+  "narrative": "故事正文（300-400字，第二人称，半文半白）",
+  "choices": [
+    {"text": "选项一（20字以内）", "hint": "这个选项可能带来的影响（10字以内，不显示给用户，仅AI内部使用）"},
+    {"text": "选项二", "hint": "..."},
+    {"text": "选项三", "hint": "..."}
+  ],
+  "summary": "一句话概括今日发生的事（15字以内）"
+}`;
+
+  try {
+    const resp = await fetch(apiBase + '/v1/chat/completions', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+apiKey
+      },
+      body:JSON.stringify({
+        model:'deepseek-chat',
+        messages:[
+          {role:'system',content:'你是曹雪芹风格的叙事者，精通《红楼梦》和《周易》。只输出JSON，不要输出其他内容。'},
+          {role:'user',content:prompt}
+        ],
+        temperature:0.9,
+        max_tokens:2000,
+        response_format:{type:'json_object'}
+      })
+    });
+
+    const data = await resp.json();
+    let result;
+    try {
+      result = JSON.parse(data.choices[0].message.content);
+    } catch(e){
+      // 尝试从文本中提取JSON
+      const txt = data.choices[0].message.content;
+      const m = txt.match(/\{[\s\S]*\}/);
+      if (m) result = JSON.parse(m[0]);
+      else throw new Error('无法解析AI返回的JSON');
+    }
+
+    // 保存结果
+    const hRecord = STATE.hexHistory.find(h=>h.day===STATE.day);
+    if (hRecord) {
+      hRecord.narrative = result.narrative;
+      hRecord.choices = result.choices;
+      hRecord.summary = result.summary;
+      hRecord.location = location;
+      hRecord.characters = recentChars;
+    }
+    saveState();
+
+    // 渲染
+    renderTodayScene(hRecord);
+
+  } catch(e) {
+    console.error('AI生成失败:', e);
+    const hRecord = STATE.hexHistory.find(h=>h.day===STATE.day);
+    useFallbackNarrative(hRecord||hexRecord);
+  }
+}
+
+function useFallbackNarrative(hexRecord){
+  const hex = HEXAGRAMS[hexRecord.hexId-1];
+  const loc = LOCATIONS[Math.floor(Math.random()*LOCATIONS.length)];
+  const chars = pickCharacters(2);
+
+  const narrative = `你今早往${loc}去，正遇见${chars[0]}和${chars[1]}在一处说话。见你来了，${chars[0]}微微一笑，说："你来得正好。我们正说呢，${hex.name}卦讲'${hex.meaning.slice(0,15)}…'，你平日里最有见地，倒说说看。"${chars[1]}却只低头不语，似乎心里有别的事。你一时不知该接话还是岔开。`;
+
+  const hRecord = STATE.hexHistory.find(h=>h.day===STATE.day);
+  if (hRecord) {
+    hRecord.narrative = narrative;
+    hRecord.choices = [
+      {text:'笑着接话，用卦理说开去',hint:'展现学识'},
+      {text:'岔开话题，问' + chars[1] + '为什么不说话',hint:'关心他人'},
+      {text:'推说自己不懂，把话头还给' + chars[0],hint:'谦逊低调'},
+    ];
+    hRecord.summary = '与' + chars[0] + '论卦';
+    hRecord.location = loc;
+    hRecord.characters = chars;
+  }
+  saveState();
+  renderTodayScene(hRecord);
+}
+
+function renderTodayScene(hexRecord){
+  const gc = document.getElementById('gameContent');
+  const hex = HEXAGRAMS[hexRecord.hexId-1];
+  const alreadyChose = STATE.choices.find(c=>c.day===STATE.day);
+
+  gc.innerHTML = `
+    <div class="game-area scroll-bottom">
+      <div class="hex-reveal" style="padding:8px 0;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:20px;font-weight:700;color:var(--red);letter-spacing:2px;">☰ ${hex.name}卦</span>
+          <span style="font-size:10px;color:var(--sub);">第${hex.id}卦</span>
+        </div>
+      </div>
+      <div class="scene-card">
+        <div class="scene-location">🏮 ${hexRecord.location||'大观园'}</div>
+        <div class="scene-text">${formatNarrative(hexRecord.narrative||'')}</div>
+      </div>
+      ${alreadyChose ? `
+        <div style="text-align:center;padding:20px;color:var(--sub);font-size:13px;letter-spacing:2px;">
+          ✨ 你已做了选择<br>
+          明日再摇一卦，故事继续……
+        </div>
+        <div style="text-align:center;padding:12px;">
+          <button class="divine-btn" onclick="advanceDay()" style="font-size:14px;padding:12px 28px;">
+            🌅 进入下一天
+          </button>
+        </div>
+      ` : `
+        <div class="choices-area">
+          ${(hexRecord.choices||[]).map((c,i)=>`
+            <button class="choice-btn" onclick="makeChoice(${i})">
+              <span class="choice-letter">${['甲','乙','丙'][i]}</span>
+              ${c.text}
+            </button>
+          `).join('')}
+        </div>
+      `}
+      ${STATE.day>1?`
+        <div style="text-align:center;margin-top:16px;">
+          <span style="font-size:11px;color:var(--sub);letter-spacing:1px;text-decoration:underline;cursor:pointer;" onclick="renderJournal()">
+            📜 查看生平录
+          </span>
+        </div>
+      `:''}
+    </div>
+  `;
+}
+
+function formatNarrative(text){
+  if (!text) return '';
+  // 高亮角色名
+  let out = text;
+  for (let name in CHARACTERS) {
+    out = out.replace(new RegExp(name,'g'), `<span class="name">${name}</span>`);
+  }
+  return out;
+}
+
+function pickCharacters(count){
+  const names = Object.keys(CHARACTERS);
+  // 优先选关系值不为0的角色
+  const shuffled = [...names].sort(()=>Math.random()-.5);
+  const withRel = shuffled.filter(n=>(STATE.relations[n]||0)!==0);
+  const withoutRel = shuffled.filter(n=>(STATE.relations[n]||0)===0);
+  return [...withRel.slice(0,count), ...withoutRel.slice(0,count-withRel.length)].slice(0,count);
+}
+
+// ── 玩家选择 ──
+function makeChoice(idx){
+  const todayHex = STATE.hexHistory.find(h=>h.day===STATE.day);
+  if (!todayHex) return;
+
+  const choice = todayHex.choices[idx];
+  if (!choice) return;
+
+  // 根据选择调整关系（模拟）
+  const chars = todayHex.characters||[];
+  if (chars.length>=1) adjustRelation(chars[0], idx===0?1:idx===2?-1:0);
+  if (chars.length>=2) adjustRelation(chars[1], idx===1?1:idx===0?-1:0);
+
+  STATE.choices.push({day:STATE.day, choice:choice.text, hint:choice.hint, chars:chars});
+  saveState();
+
+  // 重新渲染
+  renderTodayScene(todayHex);
+}
+
+function adjustRelation(name, delta){
+  if (!(name in STATE.relations)) STATE.relations[name]=0;
+  STATE.relations[name] = Math.max(-5, Math.min(5, STATE.relations[name]+delta));
+}
+
+function advanceDay(){
+  STATE.day++;
+  saveState();
+  renderGame();
+}
+
+// ── 角色关系面板 ──
+function renderRelations(){
+  const el = document.getElementById('relationsContent');
+  const items = Object.entries(STATE.relations)
+    .filter(([n,v])=>v!==0)
+    .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+
+  if (items.length===0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--sub);font-size:13px;letter-spacing:2px;">尚未与任何人建立关系。<br>在大观园中多走动，自会结识。</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="relations-title">🏮 人情冷暖</div>
+    ${items.map(([name,val])=>{
+      const abs=Math.abs(val);
+      const cls=val>0?'good':val<0?'bad':'neutral';
+      const pct=abs/5*100;
+      const desc=val>=4?'推心置腹':val>=2?'颇为亲近':val>=1?'略有交情':val<=-4?'心存芥蒂':val<=-2?'有些疏远':val<=-1?'略有不适':'如水之交';
+      return `
+        <div class="rel-item">
+          <span class="rel-name">${name}</span>
+          <div class="rel-bar-wrap"><div class="rel-bar-fill ${cls}" style="width:${pct}%"></div></div>
+          <span class="rel-val">${val>0?'+':''}${val}</span>
+          <span style="font-size:10px;color:var(--sub);width:64px;text-align:right;">${desc}</span>
+        </div>
+      `;
+    }).join('')}
+    <div style="font-size:11px;color:var(--sub);margin-top:12px;letter-spacing:1px;text-align:center;">
+      关系值范围：-5 ～ +5<br>
+      你的每个选择都在改变这些数字
+    </div>
+  `;
+}
+
+// ── 生平录 ──
+function renderJournal(){
+  const el = document.getElementById('journalContent');
+  const entries = STATE.hexHistory.slice().reverse();
+
+  if (entries.length===0){
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--sub);font-size:13px;letter-spacing:2px;">生平录尚为空。<br>摇一卦，开始你的大观园之旅。</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="font-size:14px;font-weight:700;color:var(--ink);letter-spacing:3px;margin-bottom:16px;text-align:center;">📜 生平录</div>
+    <div style="font-size:11px;color:var(--sub);text-align:center;margin-bottom:16px;letter-spacing:1px;">
+      已历 ${STATE.day-1} 日 · 经 ${entries.length} 卦
+    </div>
+    ${entries.map(h=>{
+      const hex = HEXAGRAMS[h.hexId-1];
+      const choice = STATE.choices.find(c=>c.day===h.day);
+      return `
+        <div class="journal-entry">
+          <div class="j-day">第${h.day}日</div>
+          <div class="j-hex">☰ ${h.hexName}卦（第${h.hexId}卦）· ${h.guaci}</div>
+          <div style="font-size:11px;color:var(--sub);margin:4px 0;">《象》：${h.xiang}</div>
+          ${h.summary?`<div style="margin:6px 0;">📌 ${h.summary}</div>`:''}
+          ${choice?`<div style="color:var(--red);font-size:11px;margin-top:4px;">↳ 你选择了：${choice.text}</div>`:''}
+          ${h.location?`<div style="font-size:10px;color:var(--gold);margin-top:2px;">📍 ${h.location}</div>`:''}
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+// ── 设置 ──
+document.getElementById('headerDay').addEventListener('click', ()=>{
+  document.getElementById('settingsOverlay').classList.add('show');
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiBaseInput').value = getApiBase();
+});
+
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.remove('show');
+}
+
+function saveSettings(){
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const base = document.getElementById('apiBaseInput').value.trim();
+  if (key) localStorage.setItem('daguan_api_key', key);
+  if (base) localStorage.setItem('daguan_api_base', base);
+  closeSettings();
+  // 如果有未完成的剧情，重新生成
+  const todayHex = STATE.hexHistory.find(h=>h.day===STATE.day);
+  if (todayHex && !todayHex.narrative) {
+    generateNarrative(todayHex);
+  }
+}
+
+function showSettingsPrompt(msg){
+  document.getElementById('settingsOverlay').classList.add('show');
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiBaseInput').value = getApiBase();
+}
+
+function resetGame(){
+  if (confirm('确定要重新开始吗？所有进度将被清除。')){
+    localStorage.removeItem('daguan_state');
+    STATE = {day:1,relations:{},hexHistory:[],choices:[],started:false};
+    saveState();
+    closeSettings();
+    renderSplash();
+  }
+}
+
+// ═══════════════════════
+//  初始化
+// ═══════════════════════
+loadState();
+if (STATE.started) {
+  renderGame();
+  updateHeader();
+} else {
+  renderSplash();
+}
+
+// 如果URL带了key参数,自动保存
+(function(){
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('key')) {
+    localStorage.setItem('daguan_api_key', p.get('key'));
+  }
+  if (p.get('base')) {
+    localStorage.setItem('daguan_api_base', p.get('base'));
+  }
+})();
+
+</script>
+</body>
+</html>

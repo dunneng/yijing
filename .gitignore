@@ -1,0 +1,37 @@
+# Build artifacts
+build/
+.gradle/
+.kotlin/
+__pycache__/
+*.apk
+*.zip
+
+# IDE
+.idea/
+*.iml
+
+# Python
+*.pyc
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data (too large for GitHub)
+knowledge_zs_vectors.json
+
+# Gradle
+gradle/
+gradle.zip
+gradlew
+gradlew.bat
+gradle.properties
+local.properties
+
+# Temp
+tmp/
+tmp_ocr/
+ocr_pages/
+page_images/
+word导出/
