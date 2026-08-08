@@ -50,13 +50,16 @@ const GH_AUTH = {
         },
         body: JSON.stringify({
           client_id: GITHUB_CLIENT_ID,
-          scope: 'gist read:user'
+          scope: 'gist'
         })
       });
 
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error_description || err.error || `HTTP ${resp.status}`);
+        const bodyText = await resp.text();
+        console.error('Device code request failed:', resp.status, bodyText);
+        let errData = {};
+        try { errData = JSON.parse(bodyText); } catch(e) {}
+        throw new Error(errData.error_description || errData.error || 'HTTP ' + resp.status + ': ' + bodyText.slice(0, 100));
       }
 
       const data = await resp.json();
