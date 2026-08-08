@@ -9,7 +9,7 @@
  *   4. token 存 localStorage，后续请求带 Authorization: Bearer <token>
  */
 
-const GITHUB_CLIENT_ID = 'Ov23li__FILL_AFTER_OAUTH_APP__'; // ← 注册 OAuth App 后替换
+const GITHUB_CLIENT_ID = 'Ov23liqSBKLZPfW8gLxB'; // ← 注册 OAuth App 后替换
 
 const GH_AUTH = {
   _tokenKey: 'gh_token',
